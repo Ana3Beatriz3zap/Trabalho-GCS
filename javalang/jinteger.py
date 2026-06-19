@@ -152,3 +152,88 @@ class JInteger:
     # primitivo 'int'. Python não possui tipos primitivos nem reflexão
     # equivalente. O análogo semântico mais próximo é o tipo `int` do Python.
     TYPE: type = int
+
+    # ------------------------------------------------------------------
+    # Métodos estáticos — parsing
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def parseInt(s: Optional[str], radix: int = 10) -> int:
+        """
+        Parseia a string como inteiro com sinal no radix dado.
+
+        Equivalente a:
+            Integer.parseInt(String s)           — radix = 10
+            Integer.parseInt(String s, int radix)
+
+        A string pode ter '+' ou '-' como primeiro caractere.
+        Radix deve estar em [2, 36]; fora disso lança NumberFormatException.
+
+        Exceções
+        --------
+        NumberFormatException
+            String nula, vazia, com caracteres inválidos para o radix,
+            radix fora de [2, 36], ou valor fora de [-2147483648, 2147483647].
+
+        Exemplos
+        --------
+        >>> JInteger.parseInt("473")
+        473
+        >>> JInteger.parseInt("-FF", 16)
+        -255
+        >>> JInteger.parseInt("Kona", 27)
+        411787
+        """
+        return _parse_signed_core(s, radix)
+
+    @staticmethod
+    def parseUnsignedInt(s: Optional[str], radix: int = 10) -> int:
+        """
+        Parseia a string como inteiro sem sinal no radix dado.
+
+        Valores entre 2^31 e 2^32-1 (maiores que MAX_VALUE) são retornados
+        como inteiros negativos de 32 bits com sinal — comportamento Java.
+
+        Equivalente a:
+            Integer.parseUnsignedInt(String s)
+            Integer.parseUnsignedInt(String s, int radix)
+
+        Exceções
+        --------
+        NumberFormatException
+            String nula, vazia, com sinal negativo, valor > 4294967295,
+            radix fora de [2, 36], ou caracteres inválidos.
+
+        Exemplos
+        --------
+        >>> JInteger.parseUnsignedInt("4294967295")
+        -1
+        >>> JInteger.parseUnsignedInt("ff", 16)
+        255
+        """
+        if s is None or len(s) == 0:
+            raise NumberFormatException("Argumento nulo ou string vazia")
+        _check_radix_strict(radix)
+
+        idx = 0
+        if s[0] == '+':
+            idx = 1
+        elif s[0] == '-':
+            raise NumberFormatException(
+                f'parseUnsignedInt não aceita sinal negativo: "{s}"'
+            )
+
+        if idx >= len(s):
+            raise NumberFormatException(f'Para string: "{s}"')
+
+        try:
+            value = int(s[idx:], radix)
+        except ValueError:
+            raise NumberFormatException(f'Para string: "{s}"')
+
+        if value < 0 or value > 0xFFFF_FFFF:
+            raise NumberFormatException(
+                f'Valor fora do intervalo unsigned [0, 4294967295]: "{s}"'
+            )
+
+        return _to_int32(value)
