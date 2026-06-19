@@ -17,7 +17,7 @@ class NumberFormatException(ValueError):
     Equivalente Python de java.lang.NumberFormatException.
 
     Subclasse de ValueError para manter compatibilidade com código s
-    que captura ValueError, permitendo também captura específica desta exceção.
+    que captura ValueError, permitindo também captura específica desta exceção.
     """
 
 
@@ -47,6 +47,7 @@ def _to_uint32(value: int) -> int:
 def _check_radix_silent(radix: int) -> int:
     """Retorna radix válido ou 10 — comportamento Java para toString/toUnsignedString."""
     return radix if _MIN_RADIX <= radix <= _MAX_RADIX else 10
+
 
 def _check_radix_strict(radix: int) -> None:
     """Lança NumberFormatException se radix fora de [2, 36] — usado em parseInt."""
@@ -109,6 +110,24 @@ def _int_to_str(i: int, radix: int) -> str:
         i //= radix
     return sign + ''.join(reversed(digits))
 
+
+def _uint_to_str(i: int, radix: int) -> str:
+    """
+    Converte inteiro sem sinal de 32 bits para string no radix dado.
+    Núcleo compartilhado de toUnsignedString, toBinaryString,
+    toOctalString e toHexString.
+    """
+    radix = _check_radix_silent(radix)
+    u = _to_uint32(i)
+    if u == 0:
+        return '0'
+    digits: list[str] = []
+    while u:
+        digits.append(_DIGITS[u % radix])
+        u //= radix
+    return ''.join(reversed(digits))
+
+
 class JInteger:
     """
     Equivalente Python de java.lang.Integer (Java SE 8).
@@ -139,6 +158,11 @@ class JInteger:
     '11111111111111111111111111111111'
     """
 
+    # ------------------------------------------------------------------
+    # Formatação por base — métodos estáticos
+    # ------------------------------------------------------------------
+
+    @staticmethod
     def toString(i: int, radix: int = 10) -> str:
         """
         Converte o inteiro i para string no radix especificado.
@@ -159,6 +183,7 @@ class JInteger:
             raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
         return _int_to_str(i, radix)
 
+    @staticmethod
     def toBinaryString(i: int) -> str:
         """
         Retorna representação binária do inteiro como unsigned de 32 bits.
@@ -174,6 +199,7 @@ class JInteger:
         """
         return _uint_to_str(i, 2)
 
+    @staticmethod
     def toHexString(i: int) -> str:
         """
         Retorna representação hexadecimal do inteiro como unsigned de 32 bits.
@@ -188,27 +214,8 @@ class JInteger:
         'ffffffff'
         """
         return _uint_to_str(i, 16)
-    
-    def toString(i: int, radix: int = 10) -> str:
-        """
-        Converte o inteiro i para string no radix especificado.
 
-        Equivalente a Integer.toString(int i) / Integer.toString(int i, int radix).
-        Se radix estiver fora de [2, 36], usa 10 (comportamento Java).
-
-        Exemplos
-        --------
-        >>> JInteger.toString(255, 16)
-        'ff'
-        >>> JInteger.toString(-255, 16)
-        '-ff'
-        >>> JInteger.toString(0)
-        '0'
-        """
-        if not isinstance(i, int) or isinstance(i, bool):
-            raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
-        return _int_to_str(i, radix)
-    
+    @staticmethod
     def toOctalString(i: int) -> str:
         """
         Retorna representação octal do inteiro como unsigned de 32 bits.
@@ -224,25 +231,7 @@ class JInteger:
         """
         return _uint_to_str(i, 8)
 
-    def toUnsignedString(i: int, radix: int = 10) -> str:
-        """
-        Retorna representação em string do inteiro como valor sem sinal de 32 bits.
-
-        Equivalente a:
-            Integer.toUnsignedString(int i)
-            Integer.toUnsignedString(int i, int radix)
-
-        Se radix fora de [2, 36], usa 10.
-
-        Exemplos
-        --------
-        >>> JInteger.toUnsignedString(-1)
-        '4294967295'
-        >>> JInteger.toUnsignedString(-1, 16)
-        'ffffffff'
-        """
-        return _uint_to_str(i, radix)
-    
+    @staticmethod
     def toUnsignedString(i: int, radix: int = 10) -> str:
         """
         Retorna representação em string do inteiro como valor sem sinal de 32 bits.
@@ -275,4 +264,3 @@ class JInteger:
     # primitivo 'int'. Python não possui tipos primitivos nem reflexão
     # equivalente. O análogo semântico mais próximo é o tipo `int` do Python.
     TYPE: type = int
-
