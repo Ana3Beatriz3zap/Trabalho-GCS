@@ -188,6 +188,60 @@ class JInteger:
         'ffffffff'
         """
         return _uint_to_str(i, 16)
+    
+    def toString(i: int, radix: int = 10) -> str:
+        """
+        Converte o inteiro i para string no radix especificado.
+
+        Equivalente a Integer.toString(int i) / Integer.toString(int i, int radix).
+        Se radix estiver fora de [2, 36], usa 10 (comportamento Java).
+
+        Exemplos
+        --------
+        >>> JInteger.toString(255, 16)
+        'ff'
+        >>> JInteger.toString(-255, 16)
+        '-ff'
+        >>> JInteger.toString(0)
+        '0'
+        """
+        if not isinstance(i, int) or isinstance(i, bool):
+            raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
+        return _int_to_str(i, radix)
+    
+    def toOctalString(i: int) -> str:
+        """
+        Retorna representação octal do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toOctalString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toOctalString(-1)
+        '37777777777'
+        >>> JInteger.toOctalString(8)
+        '10'
+        """
+        return _uint_to_str(i, 8)
+
+    def toUnsignedString(i: int, radix: int = 10) -> str:
+        """
+        Retorna representação em string do inteiro como valor sem sinal de 32 bits.
+
+        Equivalente a:
+            Integer.toUnsignedString(int i)
+            Integer.toUnsignedString(int i, int radix)
+
+        Se radix fora de [2, 36], usa 10.
+
+        Exemplos
+        --------
+        >>> JInteger.toUnsignedString(-1)
+        '4294967295'
+        >>> JInteger.toUnsignedString(-1, 16)
+        'ffffffff'
+        """
+        return _uint_to_str(i, radix)
 
     # ------------------------------------------------------------------
     # Constantes de classe
