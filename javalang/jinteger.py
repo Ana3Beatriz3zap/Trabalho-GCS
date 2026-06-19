@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Union
+import struct
 
 # ---------------------------------------------------------------------------
 # Sentinela para distinguir "argumento não fornecido" de None válido
@@ -221,3 +222,85 @@ class JInteger:
     # primitivo 'int'. Python não possui tipos primitivos nem reflexão
     # equivalente. O análogo semântico mais próximo é o tipo `int` do Python.
     TYPE: type = int
+
+    # ------------------------------------------------------------------
+    # Construtor
+    # ------------------------------------------------------------------
+
+    def __init__(self, value: Union[int, str]) -> None:
+        """
+        Constrói um JInteger a partir de um int ou de uma String decimal.
+
+        Equivalente a:
+            Integer(int value)   — armazena o valor truncado para 32 bits.
+            Integer(String s)    — parseia como parseInt(s, 10).
+
+        Parâmetros
+        ----------
+        value : int | str
+            int → truncado para 32 bits com sinal (overflow silencioso).
+            str → parseado como inteiro decimal com sinal.
+
+        Exceções
+        --------
+        NumberFormatException
+            Se value for str inválida ou fora do intervalo de 32 bits.
+        TypeError
+            Se value não for int (exceto bool) nem str.
+        """
+        if isinstance(value, str):
+            self._value: int = _parse_signed_core(value, 10)
+        elif isinstance(value, int) and not isinstance(value, bool):
+            self._value = _to_int32(value)
+        else:
+            raise TypeError(
+                f"JInteger requer int ou str, recebeu {type(value).__name__}"
+            )
+
+    # ------------------------------------------------------------------
+    # Conversões numéricas de instância (Number subclass equivalents)
+    # ------------------------------------------------------------------
+
+    def byteValue(self) -> int:
+        """
+        Retorna o valor como byte — narrowing para 8 bits com sinal.
+
+        Equivale ao cast (byte) do Java: os 8 bits menos significativos
+        são reinterpretados com sinal (complemento de dois).
+
+        Retorno: int no intervalo [-128, 127].
+        """
+        v = self._value & 0xFF
+        return v - 256 if v >= 128 else v
+
+    def shortValue(self) -> int:
+        """
+        Retorna o valor como short — narrowing para 16 bits com sinal.
+
+        Retorno: int no intervalo [-32768, 32767].
+        """
+        v = self._value & 0xFFFF
+        return v - 65536 if v >= 32768 else v
+    
+    def intValue(self) -> int:
+        """Retorna o valor como int de 32 bits com sinal. Sem perda de informação."""
+        return self._value
+
+    def longValue(self) -> int:
+        """
+        Retorna o valor como long — widening, sem perda de informação.
+
+        Python não distingue int de long; retorna int Python que cobre
+        todo o intervalo de long Java (64 bits).
+        """
+        return self._value
+
+    def floatValue(self) -> float:
+        """
+        Retorna o valor como float IEEE 754 de 32 bits — possível perda de precisão.
+
+        Usa struct para simular a arredondamento exato de single-precision Java.
+        Python float é 64 bits nativamente; a conversão via struct garante que
+        o valor retornado é o float32 mais próximo, como faria a JVM.
+        """
+        return struct.unpack('f', struct.pack('f', float(self._value)))[0]
