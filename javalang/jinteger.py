@@ -109,6 +109,75 @@ def _int_to_str(i: int, radix: int) -> str:
         i //= radix
     return sign + ''.join(reversed(digits))
 
+    def _uint_to_str(i: int, radix: int) -> str:
+        """
+        Converte inteiro sem sinal de 32 bits para string no radix dado.
+        Núcleo compartilhado de toUnsignedString(int) e toUnsignedString(int, int).
+        """
+        radix = _check_radix_silent(radix)
+        u = _to_uint32(i)
+        if u == 0:
+            return '0'
+        digits: list[str] = []
+        while u:
+            digits.append(_DIGITS[u % radix])
+            u //= radix
+        return ''.join(reversed(digits))
+
+# ---------------------------------------------------------------------------
+# Descritor _DualMethod — despacho por contexto (instância vs. classe)
+# ---------------------------------------------------------------------------
+
+
+class _DualMethod:
+    """
+    Descritor que implementa sobrecarga de contexto Java em Python.
+
+    Em Java, ``Integer.toString()`` (instância, zero args) e
+    ``Integer.toString(int i)`` / ``Integer.toString(int i, int radix)``
+    (métodos estáticos) coexistem com o mesmo nome porque o compilador
+    resolve a sobrecarga em tempo de compilação por tipo e aridade.
+
+    Python não tem esse mecanismo; quando se declara um @staticmethod após
+    um método de instância com o mesmo nome, o último simplesmente sobrescreve
+    o primeiro no namespace da classe.
+
+    Este descritor resolve o problema em runtime:
+    - ``obj.método(...)``   → chama ``instance_fn(obj, ...)``
+    - ``Classe.método(...)`` → chama ``static_fn(...)``
+
+    Uso dentro da classe:
+        nome = _DualMethod(instance_fn, static_fn)
+    """
+
+    def __init__(self, instance_fn, static_fn):
+        self._instance_fn = instance_fn
+        self._static_fn   = static_fn
+        # Herda a documentação do método de instância por convenção.
+        self.__doc__  = instance_fn.__doc__
+        self.__name__ = instance_fn.__name__
+
+    def __set_name__(self, owner, name):
+        self.__name__ = name
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            # Acesso via classe: Classe.método → retorna o callable estático
+            return self._static_fn
+        # Acesso via instância: obj.método → retorna bound method de instância
+        def bound(*args, **kwargs):
+            return self._instance_fn(obj, *args, **kwargs)
+        bound.__doc__  = self._instance_fn.__doc__
+        bound.__name__ = self.__name__
+        return bound
+
+
+# ---------------------------------------------------------------------------
+# Cache interno — Integer cache Java [-128, 127]
+# ---------------------------------------------------------------------------
+
+_cache: dict[int, 'JInteger'] = {}
+
 class JInteger:
     """
     Equivalente Python de java.lang.Integer (Java SE 8).
