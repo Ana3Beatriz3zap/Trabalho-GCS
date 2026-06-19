@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional, Union
+import struct
 
 # ---------------------------------------------------------------------------
 # Sentinela para distinguir "argumento não fornecido" de None válido
@@ -280,3 +281,26 @@ class JInteger:
         """
         v = self._value & 0xFFFF
         return v - 65536 if v >= 32768 else v
+    
+    def intValue(self) -> int:
+        """Retorna o valor como int de 32 bits com sinal. Sem perda de informação."""
+        return self._value
+
+    def longValue(self) -> int:
+        """
+        Retorna o valor como long — widening, sem perda de informação.
+
+        Python não distingue int de long; retorna int Python que cobre
+        todo o intervalo de long Java (64 bits).
+        """
+        return self._value
+
+    def floatValue(self) -> float:
+        """
+        Retorna o valor como float IEEE 754 de 32 bits — possível perda de precisão.
+
+        Usa struct para simular a arredondamento exato de single-precision Java.
+        Python float é 64 bits nativamente; a conversão via struct garante que
+        o valor retornado é o float32 mais próximo, como faria a JVM.
+        """
+        return struct.unpack('f', struct.pack('f', float(self._value)))[0]
