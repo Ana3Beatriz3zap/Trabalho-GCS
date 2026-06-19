@@ -391,3 +391,21 @@ class JInteger:
         return _to_int32(_to_uint32(dividend) // _to_uint32(divisor))
 
     
+    @staticmethod
+    def remainderUnsigned(dividend: int, divisor: int) -> int:
+        """
+        Resto da divisão inteira tratando ambos os operandos como unsigned de 32 bits.
+
+        Equivalente a Integer.remainderUnsigned(int dividend, int divisor).
+
+        Exceções
+        --------
+        ZeroDivisionError
+            Se divisor for zero.
+
+        Exemplos
+        --------
+        >>> JInteger.remainderUnsigned(-1, 2)    # 4294967295 % 2
+        1
+        """
+        return _to_int32(_to_uint32(dividend) % _to_uint32(divisor))
