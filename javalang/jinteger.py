@@ -290,3 +290,73 @@ class JInteger:
             return _cache[parsed]
 
         return JInteger(parsed)
+    
+    # ------------------------------------------------------------------
+    # decode
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def decode(nm: Optional[str]) -> 'JInteger':
+        """
+        Decodifica uma String para JInteger aceitando decimal, hex e octal.
+
+        Formatos aceitos (sinal '+'/'-' opcional antes do prefixo):
+            decimal      → "42", "-42", "+42"
+            hexadecimal  → "0x1F", "0X1F", "#1F"
+            octal        → "017"
+
+        Equivalente a Integer.decode(String nm).
+
+        Exceções
+        --------
+        NumberFormatException
+            nm nulo, vazio, formato inválido, ou valor fora de [-2^31, 2^31-1].
+
+        Exemplos
+        --------
+        >>> JInteger.decode("0xFF").intValue()
+        255
+        >>> JInteger.decode("-017").intValue()
+        -15
+        """
+        if nm is None or len(nm) == 0:
+            raise NumberFormatException("decode: argumento nulo ou string vazia")
+
+        s = nm.strip()
+        if not s:
+            raise NumberFormatException("decode: string em branco")
+
+        negative = False
+        idx = 0
+        if s[0] == '-':
+            negative = True
+            idx = 1
+        elif s[0] == '+':
+            idx = 1
+
+        radix = 10
+        if s[idx:idx + 2].lower() == '0x':
+            radix = 16
+            idx += 2
+        elif s[idx:idx + 1] == '#':
+            radix = 16
+            idx += 1
+        elif s[idx:idx + 1] == '0' and len(s) > idx + 1:
+            radix = 8
+            idx += 1
+
+        digits = s[idx:]
+        if not digits:
+            raise NumberFormatException(f'decode: sem dígitos em "{nm}"')
+
+        try:
+            magnitude = int(digits, radix)
+        except ValueError:
+            raise NumberFormatException(f'decode: "{nm}" não é um inteiro válido')
+
+        value = -magnitude if negative else magnitude
+
+        if value < -(2**31) or value > (2**31 - 1):
+            raise NumberFormatException(f'decode: valor fora do intervalo: "{nm}"')
+
+        return JInteger.valueOf(value)
