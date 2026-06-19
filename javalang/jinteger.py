@@ -16,7 +16,7 @@ class NumberFormatException(ValueError):
     """
     Equivalente Python de java.lang.NumberFormatException.
 
-    Subclasse de ValueError para manter compatibilidade com código Python
+    Subclasse de ValueError para manter compatibilidade com código s
     que captura ValueError, permitendo também captura específica desta exceção.
     """
 
@@ -139,6 +139,56 @@ class JInteger:
     '11111111111111111111111111111111'
     """
 
+    def toString(i: int, radix: int = 10) -> str:
+        """
+        Converte o inteiro i para string no radix especificado.
+
+        Equivalente a Integer.toString(int i) / Integer.toString(int i, int radix).
+        Se radix estiver fora de [2, 36], usa 10 (comportamento Java).
+
+        Exemplos
+        --------
+        >>> JInteger.toString(255, 16)
+        'ff'
+        >>> JInteger.toString(-255, 16)
+        '-ff'
+        >>> JInteger.toString(0)
+        '0'
+        """
+        if not isinstance(i, int) or isinstance(i, bool):
+            raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
+        return _int_to_str(i, radix)
+
+    def toBinaryString(i: int) -> str:
+        """
+        Retorna representação binária do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toBinaryString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toBinaryString(-1)
+        '11111111111111111111111111111111'
+        >>> JInteger.toBinaryString(4)
+        '100'
+        """
+        return _uint_to_str(i, 2)
+
+    def toHexString(i: int) -> str:
+        """
+        Retorna representação hexadecimal do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toHexString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toHexString(255)
+        'ff'
+        >>> JInteger.toHexString(-1)
+        'ffffffff'
+        """
+        return _uint_to_str(i, 16)
+
     # ------------------------------------------------------------------
     # Constantes de classe
     # ------------------------------------------------------------------
@@ -152,3 +202,4 @@ class JInteger:
     # primitivo 'int'. Python não possui tipos primitivos nem reflexão
     # equivalente. O análogo semântico mais próximo é o tipo `int` do Python.
     TYPE: type = int
+
