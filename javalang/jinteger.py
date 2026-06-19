@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 from typing import Optional, Union
 import struct
 
@@ -304,3 +305,37 @@ class JInteger:
         o valor retornado é o float32 mais próximo, como faria a JVM.
         """
         return struct.unpack('f', struct.pack('f', float(self._value)))[0]
+    
+    @staticmethod
+    def sum(a: int, b: int) -> int:
+        """
+        Soma dois inteiros com comportamento de overflow Java (silencioso).
+
+        MAX_VALUE + 1 == MIN_VALUE, exatamente como em Java.
+
+        Equivalente a Integer.sum(int a, int b).
+
+        Exemplos
+        --------
+        >>> JInteger.sum(2147483647, 1)
+        -2147483648
+        """
+        return _to_int32(a + b)
+
+    @staticmethod
+    def max(a: int, b: int) -> int:
+        """
+        Retorna o maior entre dois inteiros de 32 bits com sinal.
+
+        Equivalente a Integer.max(int a, int b).
+        """
+        return a if _to_int32(a) >= _to_int32(b) else b
+
+    @staticmethod
+    def min(a: int, b: int) -> int:
+        """
+        Retorna o menor entre dois inteiros de 32 bits com sinal.
+
+        Equivalente a Integer.min(int a, int b).
+        """
+        return a if _to_int32(a) <= _to_int32(b) else b
