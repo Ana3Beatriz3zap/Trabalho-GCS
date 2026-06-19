@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Union
 
 # ---------------------------------------------------------------------------
 # Sentinela para distinguir "argumento não fornecido" de None válido
@@ -108,6 +108,13 @@ def _int_to_str(i: int, radix: int) -> str:
         digits.append(_DIGITS[i % radix])
         i //= radix
     return sign + ''.join(reversed(digits))
+
+# ---------------------------------------------------------------------------
+# Cache interno — Integer cache Java [-128, 127]
+# ---------------------------------------------------------------------------
+
+_cache: dict[int, 'JInteger'] = {}
+
 
 class JInteger:
     """
