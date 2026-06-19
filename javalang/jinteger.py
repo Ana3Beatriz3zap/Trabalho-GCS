@@ -221,3 +221,33 @@ class JInteger:
     # primitivo 'int'. Python não possui tipos primitivos nem reflexão
     # equivalente. O análogo semântico mais próximo é o tipo `int` do Python.
     TYPE: type = int
+
+    def doubleValue(self) -> float:
+        """
+        Retorna o valor como double IEEE 754 de 64 bits — sem perda de precisão.
+
+        Python float é de 64 bits (double), equivalente direto ao double Java.
+        """
+        return float(self._value)
+
+    # ------------------------------------------------------------------
+    # Métodos de instância — Object / Comparable
+    # ------------------------------------------------------------------
+
+    def _toString_instance(self) -> str:
+        """
+        Retorna representação decimal com sinal deste JInteger.
+
+        Equivalente a Integer.toString() de instância Java.
+        Chamado via JInteger(x).toString() — sem argumentos.
+        """
+        return _int_to_str(self._value, 10)
+
+    def _hashCode_instance(self) -> int:
+        """
+        Retorna o hash code deste JInteger.
+
+        Em Java, Integer.hashCode() retorna o próprio valor int.
+        Chamado via JInteger(x).hashCode() — sem argumentos.
+        """
+        return self._value
