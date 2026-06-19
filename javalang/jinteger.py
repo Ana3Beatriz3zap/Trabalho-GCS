@@ -1,5 +1,52 @@
 from __future__ import annotations
 
+# ---------------------------------------------------------------------------
+# Sentinela para distinguir "argumento não fornecido" de None válido
+# ---------------------------------------------------------------------------
+
+_MISSING = object()
+
+# ---------------------------------------------------------------------------
+# Exceção equivalente a java.lang.NumberFormatException
+# ---------------------------------------------------------------------------
+
+
+class NumberFormatException(ValueError):
+    """
+    Equivalente Python de java.lang.NumberFormatException.
+
+    Subclasse de ValueError para manter compatibilidade com código Python
+    que captura ValueError, permitendo também captura específica desta exceção.
+    """
+
+
+# ---------------------------------------------------------------------------
+# Helpers internos de 32 bits — não fazem parte da API pública
+# ---------------------------------------------------------------------------
+
+_MASK32    = 0xFFFF_FFFF
+_MIN_RADIX = 2
+_MAX_RADIX = 36
+_DIGITS    = '0123456789abcdefghijklmnopqrstuvwxyz'
+
+
+def _to_int32(value: int) -> int:
+    """Trunca para inteiro com sinal de 32 bits (complemento de dois)."""
+    value &= _MASK32
+    if value >= 0x8000_0000:
+        value -= 0x1_0000_0000
+    return value
+
+
+def _to_uint32(value: int) -> int:
+    """Interpreta value como inteiro sem sinal de 32 bits."""
+    return value & _MASK32
+
+
+def _check_radix_silent(radix: int) -> int:
+    """Retorna radix válido ou 10 — comportamento Java para toString/toUnsignedString."""
+    return radix if _MIN_RADIX <= radix <= _MAX_RADIX else 10
+
 
 class JInteger:
     """
