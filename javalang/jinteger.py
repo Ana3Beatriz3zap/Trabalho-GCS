@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 # ---------------------------------------------------------------------------
 # Sentinela para distinguir "argumento não fornecido" de None válido
@@ -47,6 +48,66 @@ def _check_radix_silent(radix: int) -> int:
     """Retorna radix válido ou 10 — comportamento Java para toString/toUnsignedString."""
     return radix if _MIN_RADIX <= radix <= _MAX_RADIX else 10
 
+def _check_radix_strict(radix: int) -> None:
+    """Lança NumberFormatException se radix fora de [2, 36] — usado em parseInt."""
+    if not (_MIN_RADIX <= radix <= _MAX_RADIX):
+        raise NumberFormatException(
+            f"radix {radix} fora do intervalo [{_MIN_RADIX}, {_MAX_RADIX}]"
+        )
+
+
+def _parse_signed_core(s: Optional[str], radix: int) -> int:
+    """
+    Núcleo de parseInt: analisa string como inteiro com sinal no radix dado.
+    Lança NumberFormatException para qualquer entrada inválida.
+    """
+    if s is None or len(s) == 0:
+        raise NumberFormatException("Argumento nulo ou string vazia")
+    _check_radix_strict(radix)
+
+    negative = False
+    idx = 0
+    if s[0] == '-':
+        negative = True
+        idx = 1
+    elif s[0] == '+':
+        idx = 1
+
+    if idx >= len(s):
+        raise NumberFormatException(f'Para string: "{s}"')
+
+    try:
+        magnitude = int(s[idx:], radix)
+    except ValueError:
+        raise NumberFormatException(f'Para string: "{s}"')
+
+    value = -magnitude if negative else magnitude
+
+    if value < -(2**31) or value > (2**31 - 1):
+        raise NumberFormatException(
+            f'Valor fora do intervalo [-2147483648, 2147483647]: "{s}"'
+        )
+    return value
+
+
+def _int_to_str(i: int, radix: int) -> str:
+    """
+    Converte inteiro com sinal para string no radix dado.
+    Núcleo compartilhado de toString(int) e toString(int, int).
+    """
+    radix = _check_radix_silent(radix)
+    i = _to_int32(i)
+    if i == 0:
+        return '0'
+    sign = ''
+    if i < 0:
+        sign = '-'
+        i = -i
+    digits: list[str] = []
+    while i:
+        digits.append(_DIGITS[i % radix])
+        i //= radix
+    return sign + ''.join(reversed(digits))
 
 class JInteger:
     """
