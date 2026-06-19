@@ -251,3 +251,63 @@ class JInteger:
         Chamado via JInteger(x).hashCode() — sem argumentos.
         """
         return self._value
+    
+    def equals(self, obj: object) -> bool:
+        """
+        Compara este objeto com outro pelo valor.
+
+        Retorna True se e somente se obj é um JInteger com o mesmo valor.
+        Equivalente a Integer.equals(Object).
+        """
+        if not isinstance(obj, JInteger):
+            return False
+        return self._value == obj._value
+
+    def compareTo(self, anotherInteger: 'JInteger') -> int:
+        """
+        Compara numericamente este JInteger com outro.
+
+        Retorna: 0 se iguais, negativo se este < outro, positivo se este > outro.
+        Equivalente a Integer.compareTo(Integer).
+        """
+        if not isinstance(anotherInteger, JInteger):
+            raise TypeError("compareTo requer um JInteger")
+        return JInteger.compare(self._value, anotherInteger._value)
+
+    # ------------------------------------------------------------------
+    # toString — descritor _DualMethod
+    #
+    # Java tem DOIS métodos com o mesmo nome:
+    #   instância : String toString()
+    #   estático  : static String toString(int i)
+    #               static String toString(int i, int radix)
+    #
+    # O descritor despacha:
+    #   JInteger(42).toString()        → _toString_instance(self)   → "42"
+    #   JInteger.toString(42)          → _toString_static(42)       → "42"
+    #   JInteger.toString(255, 16)     → _toString_static(255, 16)  → "ff"
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _toString_static(i: int, radix: int = 10) -> str:
+        """
+        Converte o inteiro i para string no radix especificado.
+
+        Equivalente a:
+            Integer.toString(int i)
+            Integer.toString(int i, int radix)
+
+        Se radix estiver fora de [2, 36], usa 10 (comportamento Java).
+
+        Exemplos
+        --------
+        >>> JInteger.toString(255, 16)
+        'ff'
+        >>> JInteger.toString(-255, 16)
+        '-ff'
+        >>> JInteger.toString(0)
+        '0'
+        """
+        if not isinstance(i, int) or isinstance(i, bool):
+            raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
+        return _int_to_str(i, radix)
