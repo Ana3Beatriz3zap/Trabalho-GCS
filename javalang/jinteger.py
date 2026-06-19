@@ -160,6 +160,24 @@ class _DualMethod:
     def __set_name__(self, owner, name):
         self.__name__ = name
 
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            # Acesso via classe: Classe.método → retorna o callable estático
+            return self._static_fn
+        # Acesso via instância: obj.método → retorna bound method de instância
+        def bound(*args, **kwargs):
+            return self._instance_fn(obj, *args, **kwargs)
+        bound.__doc__  = self._instance_fn.__doc__
+        bound.__name__ = self.__name__
+        return bound
+
+
+# ---------------------------------------------------------------------------
+# Cache interno — Integer cache Java [-128, 127]
+# ---------------------------------------------------------------------------
+
+_cache: dict[int, 'JInteger'] = {}
+
 class JInteger:
     """
     Equivalente Python de java.lang.Integer (Java SE 8).
