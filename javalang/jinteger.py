@@ -237,3 +237,56 @@ class JInteger:
             )
 
         return _to_int32(value)
+
+    # ------------------------------------------------------------------
+    # valueOf — aridade 1 ou 2, despacho por tipo do primeiro argumento
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def valueOf(value: Union[int, str], radix: int = 10) -> 'JInteger':
+        """
+        Retorna um JInteger representando o valor especificado.
+
+        Equivalente a:
+            Integer.valueOf(int i)
+            Integer.valueOf(String s)         — radix implícito 10
+            Integer.valueOf(String s, int radix)
+
+        Implementa o Integer cache Java: para valores em [-128, 127] retorna
+        sempre o mesmo objeto (identidade garantida por especificação).
+
+        Parâmetros
+        ----------
+        value : int | str
+            int → usado diretamente (truncado para 32 bits).
+            str → parseado com parseInt(value, radix).
+        radix : int
+            Base numérica, usada apenas quando value é str. Default 10.
+
+        Exemplos
+        --------
+        >>> JInteger.valueOf(42).intValue()
+        42
+        >>> JInteger.valueOf("ff", 16).intValue()
+        255
+        >>> JInteger.valueOf(-128) is JInteger.valueOf(-128)
+        True
+        """
+        if isinstance(value, str):
+            parsed = _parse_signed_core(value, radix)
+        elif isinstance(value, int) and not isinstance(value, bool):
+            parsed = _to_int32(value)
+        else:
+            raise TypeError(
+                f"valueOf requer int ou str, recebeu {type(value).__name__}"
+            )
+
+        # Integer cache [-128, 127]
+        if -128 <= parsed <= 127:
+            if parsed not in _cache:
+                obj = object.__new__(JInteger)
+                obj._value = parsed
+                _cache[parsed] = obj
+            return _cache[parsed]
+
+        return JInteger(parsed)
