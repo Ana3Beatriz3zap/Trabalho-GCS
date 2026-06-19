@@ -311,3 +311,37 @@ class JInteger:
         if not isinstance(i, int) or isinstance(i, bool):
             raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
         return _int_to_str(i, radix)
+    
+    toString = _DualMethod(_toString_instance, _toString_static)
+
+    # ------------------------------------------------------------------
+    # hashCode — descritor _DualMethod
+    #
+    # Java SE 8 adicionou uma sobrecarga estática:
+    #   instância : int hashCode()                → retorna this.value
+    #   estático  : static int hashCode(int value) → retorna value
+    #
+    # O descritor despacha:
+    #   JInteger(42).hashCode()    → _hashCode_instance(self)  → 42
+    #   JInteger.hashCode(42)      → _hashCode_static(42)      → 42
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _hashCode_static(value: int) -> int:
+        """
+        Retorna o hash code para o valor int dado.
+
+        Equivalente a Integer.hashCode(int value) — método estático Java 8+.
+        Em Java, hashCode de int é o próprio valor; aqui aplicamos truncamento
+        de 32 bits para consistência.
+
+        Exemplos
+        --------
+        >>> JInteger.hashCode(42)
+        42
+        >>> JInteger.hashCode(-1)
+        -1
+        """
+        return _to_int32(value)
+
+    hashCode = _DualMethod(_hashCode_instance, _hashCode_static)
