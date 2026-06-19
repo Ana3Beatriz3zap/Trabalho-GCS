@@ -242,6 +242,25 @@ class JInteger:
         'ffffffff'
         """
         return _uint_to_str(i, radix)
+    
+    def toUnsignedString(i: int, radix: int = 10) -> str:
+        """
+        Retorna representação em string do inteiro como valor sem sinal de 32 bits.
+
+        Equivalente a:
+            Integer.toUnsignedString(int i)
+            Integer.toUnsignedString(int i, int radix)
+
+        Se radix fora de [2, 36], usa 10.
+
+        Exemplos
+        --------
+        >>> JInteger.toUnsignedString(-1)
+        '4294967295'
+        >>> JInteger.toUnsignedString(-1, 16)
+        'ffffffff'
+        """
+        return _uint_to_str(i, radix)
 
     # ------------------------------------------------------------------
     # Constantes de classe
