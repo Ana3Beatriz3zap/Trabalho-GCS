@@ -411,11 +411,16 @@ class JInteger:
         if n == 0:
             return 32
         count = 0
-        if n <= 0x0000_FFFF: count += 16; n <<= 16  # noqa: E702
-        if n <= 0x00FF_FFFF: count += 8;  n <<= 8   # noqa: E702
-        if n <= 0x0FFF_FFFF: count += 4;  n <<= 4   # noqa: E702
-        if n <= 0x3FFF_FFFF: count += 2;  n <<= 2   # noqa: E702
-        if n <= 0x7FFF_FFFF: count += 1              # noqa: E702
+        if n <= 0x0000_FFFF: 
+            count += 16; n <<= 16  # noqa: E702
+        if n <= 0x00FF_FFFF: 
+            count += 8;  n <<= 8   # noqa: E702
+        if n <= 0x0FFF_FFFF: 
+            count += 4;  n <<= 4   # noqa: E702
+        if n <= 0x3FFF_FFFF: 
+            count += 2;  n <<= 2   # noqa: E702
+        if n <= 0x7FFF_FFFF: 
+            count += 1              # noqa: E702
         return count
 
     @staticmethod
