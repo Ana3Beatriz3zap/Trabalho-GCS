@@ -304,3 +304,69 @@ class JInteger:
         o valor retornado é o float32 mais próximo, como faria a JVM.
         """
         return struct.unpack('f', struct.pack('f', float(self._value)))[0]
+    
+    @staticmethod
+    def reverseBytes(i: int) -> int:
+        """
+        Inverte a ordem dos 4 bytes, mantendo os bits dentro de cada byte.
+
+        Algoritmo: extração byte a byte e reagrupamento na ordem inversa.
+        Equivale a trocar endianness de um inteiro de 32 bits.
+
+        Equivalente a Integer.reverseBytes(int i).
+
+        Exemplos
+        --------
+        >>> hex(JInteger.reverseBytes(0x12345678))
+        '0x78563412'
+        """
+        n = _to_uint32(i)
+        b0 = (n >> 24) & 0xFF
+        b1 = (n >> 16) & 0xFF
+        b2 = (n >>  8) & 0xFF
+        b3 =  n        & 0xFF
+        return _to_int32((b3 << 24) | (b2 << 16) | (b1 << 8) | b0)
+
+    @staticmethod
+    def rotateLeft(i: int, distance: int) -> int:
+        """
+        Rotaciona os bits de i à esquerda por distance posições.
+
+        Bits que saem pela esquerda reentram pela direita.
+        Apenas os 5 bits menos significativos de distance são usados
+        (módulo 32) — comportamento definido pela especificação Java.
+        Distâncias negativas equivalem a rotateRight.
+
+        Equivalente a Integer.rotateLeft(int i, int distance).
+
+        Exemplos
+        --------
+        >>> JInteger.rotateLeft(1, 1)
+        2
+        >>> JInteger.rotateLeft(-2147483648, 1)    # MIN_VALUE → 1
+        1
+        >>> JInteger.rotateLeft(42, 32)            # noop
+        42
+        """
+        distance &= 0x1F   # módulo 32; trata negativo e > 32 automaticamente
+        if distance == 0:
+            return _to_int32(i)
+        n = _to_uint32(i)
+        return _to_int32(((n << distance) | (n >> (32 - distance))) & _MASK32)
+
+    @staticmethod
+    def rotateRight(i: int, distance: int) -> int:
+        """
+        Rotaciona os bits de i à direita por distance posições.
+
+        Equivalente a Integer.rotateRight(int i, int distance).
+        Implementado como rotateLeft(i, 32 - distance & 0x1F).
+
+        Exemplos
+        --------
+        >>> JInteger.rotateRight(1, 1)
+        -2147483648
+        >>> JInteger.rotateRight(42, 32)           # noop
+        42
+        """
+        return JInteger.rotateLeft(i, -distance)
