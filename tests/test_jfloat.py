@@ -73,3 +73,37 @@ class TestConversions:
     def test_byte_value_min_byte(self):
         assert JFloat(128.0).byteValue() == -128
 
+    # --- shortValue ---
+
+    def test_short_value_normal(self):
+        assert JFloat(32767.0).shortValue() == 32767
+
+    def test_short_value_wraps(self):
+        assert JFloat(32768.0).shortValue() == -32768
+
+    def test_short_value_negative(self):
+        assert JFloat(-1.0).shortValue() == -1
+
+    # --- floatValue / doubleValue ---
+
+    def test_float_value(self):
+        assert JFloat(1.5).floatValue() == 1.5
+
+    def test_double_value(self):
+        assert JFloat(1.5).doubleValue() == 1.5
+
+# ===========================================================================
+# 4. IEEE 754 checks
+# ===========================================================================
+
+class TestIEEEChecks:
+
+    # --- isNaN (instance) ---
+    def test_is_nan_instance_true(self):
+        assert JFloat(float('nan')).isNaN() is True
+
+    def test_is_nan_instance_false(self):
+        assert JFloat(1.0).isNaN() is False
+
+    def test_is_nan_instance_infinity_false(self):
+        assert JFloat(float('inf')).isNaN() is False
