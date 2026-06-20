@@ -384,3 +384,93 @@ class JInteger:
         """
         u = _to_uint32(i)
         return _to_int32(u & (-u & _MASK32))
+
+    @staticmethod
+    def numberOfLeadingZeros(i: int) -> int:
+        """
+        Conta zeros à esquerda do bit 1 mais alto na representação de 32 bits.
+
+        Retorna 32 se i == 0.
+
+        Algoritmo: busca binária por halvings (Hacker's Delight §5-3).
+        Em cada passo, testa se os n bits mais altos são todos zero;
+        se sim, descarta a metade inferior e acumula o contador.
+
+        Equivalente a Integer.numberOfLeadingZeros(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.numberOfLeadingZeros(0)
+        32
+        >>> JInteger.numberOfLeadingZeros(1)
+        31
+        >>> JInteger.numberOfLeadingZeros(-1)    # bit 31 setado
+        0
+        """
+        n = _to_uint32(i)
+        if n == 0:
+            return 32
+        count = 0
+        if n <= 0x0000_FFFF: count += 16; n <<= 16  # noqa: E702
+        if n <= 0x00FF_FFFF: count += 8;  n <<= 8   # noqa: E702
+        if n <= 0x0FFF_FFFF: count += 4;  n <<= 4   # noqa: E702
+        if n <= 0x3FFF_FFFF: count += 2;  n <<= 2   # noqa: E702
+        if n <= 0x7FFF_FFFF: count += 1              # noqa: E702
+        return count
+
+    @staticmethod
+    def numberOfTrailingZeros(i: int) -> int:
+        """
+        Conta zeros à direita do bit 1 menos significativo na representação de 32 bits.
+
+        Retorna 32 se i == 0.
+
+        Algoritmo: isola o LSB com n & (-n), depois aplica numberOfLeadingZeros
+        e ajusta: NTZ(n) = 31 - NLZ(lowestOneBit(n)).
+
+        Equivalente a Integer.numberOfTrailingZeros(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.numberOfTrailingZeros(0)
+        32
+        >>> JInteger.numberOfTrailingZeros(8)    # 0b1000
+        3
+        >>> JInteger.numberOfTrailingZeros(1)
+        0
+        """
+        n = _to_uint32(i)
+        if n == 0:
+            return 32
+        low = n & (-n & _MASK32)
+        return 31 - JInteger.numberOfLeadingZeros(low)
+
+    @staticmethod
+    def reverse(i: int) -> int:
+        """
+        Inverte a ordem de todos os 32 bits.
+
+        Algoritmo: permutação paralela por trocas de metades sucessivas
+        (Hacker's Delight §7-1). Cinco passos de complexidade O(1):
+          passo 1: troca bits vizinhos (granularidade 1)
+          passo 2: troca pares  (granularidade 2)
+          passo 3: troca nibbles (granularidade 4)
+          passo 4: troca bytes  (granularidade 8)
+          passo 5: troca half-words (granularidade 16)
+
+        Equivalente a Integer.reverse(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.reverse(1)       # 0x00000001 → 0x80000000
+        -2147483648
+        >>> JInteger.reverse(JInteger.reverse(42)) == 42
+        True
+        """
+        n = _to_uint32(i)
+        n = ((n & 0x5555_5555) << 1)  | ((n >> 1)  & 0x5555_5555)
+        n = ((n & 0x3333_3333) << 2)  | ((n >> 2)  & 0x3333_3333)
+        n = ((n & 0x0F0F_0F0F) << 4)  | ((n >> 4)  & 0x0F0F_0F0F)
+        n = ((n & 0x00FF_00FF) << 8)  | ((n >> 8)  & 0x00FF_00FF)
+        n = ((n & 0x0000_FFFF) << 16) | ((n >> 16) & 0x0000_FFFF)
+        return _to_int32(n & _MASK32)
