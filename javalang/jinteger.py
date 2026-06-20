@@ -304,3 +304,83 @@ class JInteger:
         o valor retornado é o float32 mais próximo, como faria a JVM.
         """
         return struct.unpack('f', struct.pack('f', float(self._value)))[0]
+    
+    @staticmethod
+    def bitCount(i: int) -> int:
+        """
+        Conta os bits 1 na representação de 32 bits (population count / popcount).
+
+        Algoritmo: Hacker's Delight cap. 5 — soma paralela em pares de bits.
+        Complexidade: O(1) com 5 operações de redução.
+
+        Equivalente a Integer.bitCount(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.bitCount(-1)
+        32
+        >>> JInteger.bitCount(7)
+        3
+        >>> JInteger.bitCount(0)
+        0
+        """
+        n = _to_uint32(i)
+        # Soma pares de bits adjacentes em paralelo
+        n = n - ((n >> 1) & 0x5555_5555)
+        # Soma grupos de 4 bits
+        n = (n & 0x3333_3333) + ((n >> 2) & 0x3333_3333)
+        # Soma grupos de 8 bits; máscara elimina overflow interno
+        n = (n + (n >> 4)) & 0x0F0F_0F0F
+        # Multiplica para acumular nos 8 bits mais altos; shift extrai resultado
+        return ((n * 0x0101_0101) & _MASK32) >> 24
+
+    @staticmethod
+    def highestOneBit(i: int) -> int:
+        """
+        Retorna um valor com apenas o bit 1 mais significativo de i.
+
+        Retorna 0 se i == 0; retorna MIN_VALUE se o bit 31 estiver setado.
+
+        Algoritmo: propaga o bit mais alto progressivamente para baixo via OR,
+        depois isola o topo com (i XOR i>>1) equivalente a (i - i>>1).
+
+        Equivalente a Integer.highestOneBit(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.highestOneBit(10)    # 0b1010 → 0b1000
+        8
+        >>> JInteger.highestOneBit(-1)    # MSB de 0xFFFFFFFF = bit 31
+        -2147483648
+        >>> JInteger.highestOneBit(0)
+        0
+        """
+        n = _to_uint32(i)
+        n |= (n >> 1)
+        n |= (n >> 2)
+        n |= (n >> 4)
+        n |= (n >> 8)
+        n |= (n >> 16)
+        return _to_int32(n - (n >> 1))
+
+    @staticmethod
+    def lowestOneBit(i: int) -> int:
+        """
+        Retorna um valor com apenas o bit 1 menos significativo de i.
+
+        Retorna 0 se i == 0.
+
+        Algoritmo: n & (-n) isola o bit menos significativo em complemento
+        de dois — propriedade fundamental do two's complement.
+
+        Equivalente a Integer.lowestOneBit(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.lowestOneBit(12)    # 0b1100 → 0b0100
+        4
+        >>> JInteger.lowestOneBit(-12)   # same LSB
+        4
+        """
+        u = _to_uint32(i)
+        return _to_int32(u & (-u & _MASK32))
