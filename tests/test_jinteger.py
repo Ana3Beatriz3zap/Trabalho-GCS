@@ -37,10 +37,14 @@ class TestIntValue:
 
     def test_retorna_limite_superior_int(self):
         assert JInteger(JInteger.MAX_VALUE).intValue() == 2147483647
-        
+
 class TestLongValue:
     def test_retorna_valor_original(self):
         assert JInteger(500).longValue() == 500
 
     def test_retorna_limite_inferior_int(self):
         assert JInteger(JInteger.MIN_VALUE).longValue() == -2147483648
+
+class TestFloatValue:
+    def test_conversao_valor_simples(self):
+        assert JInteger(42).floatValue() == 42.0
