@@ -34,3 +34,13 @@ class TestShortValue:
 class TestIntValue:
     def test_retorna_valor_original(self):
         assert JInteger(12345).intValue() == 12345
+
+    def test_retorna_limite_superior_int(self):
+        assert JInteger(JInteger.MAX_VALUE).intValue() == 2147483647
+        
+class TestLongValue:
+    def test_retorna_valor_original(self):
+        assert JInteger(500).longValue() == 500
+
+    def test_retorna_limite_inferior_int(self):
+        assert JInteger(JInteger.MIN_VALUE).longValue() == -2147483648
