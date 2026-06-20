@@ -107,3 +107,10 @@ class TestIEEEChecks:
 
     def test_is_nan_instance_infinity_false(self):
         assert JFloat(float('inf')).isNaN() is False
+        
+    # --- isNaN (static) ---
+    def test_is_nan_static_true(self):
+        assert JFloat.isNaN(float('nan')) is True
+
+    def test_is_nan_static_false(self):
+        assert JFloat.isNaN(1.0) is False
