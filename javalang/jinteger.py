@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional, Union
+import struct
 
 # ---------------------------------------------------------------------------
 # Sentinela para distinguir "argumento não fornecido" de None válido
@@ -109,6 +110,69 @@ def _int_to_str(i: int, radix: int) -> str:
         i //= radix
     return sign + ''.join(reversed(digits))
 
+    def _uint_to_str(i: int, radix: int) -> str:
+        """
+        Converte inteiro sem sinal de 32 bits para string no radix dado.
+        Núcleo compartilhado de toUnsignedString(int) e toUnsignedString(int, int).
+        """
+        radix = _check_radix_silent(radix)
+        u = _to_uint32(i)
+        if u == 0:
+            return '0'
+        digits: list[str] = []
+        while u:
+            digits.append(_DIGITS[u % radix])
+            u //= radix
+        return ''.join(reversed(digits))
+
+# ---------------------------------------------------------------------------
+# Descritor _DualMethod — despacho por contexto (instância vs. classe)
+# ---------------------------------------------------------------------------
+
+
+class _DualMethod:
+    """
+    Descritor que implementa sobrecarga de contexto Java em Python.
+
+    Em Java, ``Integer.toString()`` (instância, zero args) e
+    ``Integer.toString(int i)`` / ``Integer.toString(int i, int radix)``
+    (métodos estáticos) coexistem com o mesmo nome porque o compilador
+    resolve a sobrecarga em tempo de compilação por tipo e aridade.
+
+    Python não tem esse mecanismo; quando se declara um @staticmethod após
+    um método de instância com o mesmo nome, o último simplesmente sobrescreve
+    o primeiro no namespace da classe.
+
+    Este descritor resolve o problema em runtime:
+    - ``obj.método(...)``   → chama ``instance_fn(obj, ...)``
+    - ``Classe.método(...)`` → chama ``static_fn(...)``
+
+    Uso dentro da classe:
+        nome = _DualMethod(instance_fn, static_fn)
+    """
+
+    def __init__(self, instance_fn, static_fn):
+        self._instance_fn = instance_fn
+        self._static_fn   = static_fn
+        # Herda a documentação do método de instância por convenção.
+        self.__doc__  = instance_fn.__doc__
+        self.__name__ = instance_fn.__name__
+
+    def __set_name__(self, owner, name):
+        self.__name__ = name
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            # Acesso via classe: Classe.método → retorna o callable estático
+            return self._static_fn
+        # Acesso via instância: obj.método → retorna bound method de instância
+        def bound(*args, **kwargs):
+            return self._instance_fn(obj, *args, **kwargs)
+        bound.__doc__  = self._instance_fn.__doc__
+        bound.__name__ = self.__name__
+        return bound
+
+
 # ---------------------------------------------------------------------------
 # Cache interno — Integer cache Java [-128, 127]
 # ---------------------------------------------------------------------------
@@ -159,6 +223,88 @@ class JInteger:
     # primitivo 'int'. Python não possui tipos primitivos nem reflexão
     # equivalente. O análogo semântico mais próximo é o tipo `int` do Python.
     TYPE: type = int
+
+    # ------------------------------------------------------------------
+    # Construtor
+    # ------------------------------------------------------------------
+
+    def __init__(self, value: Union[int, str]) -> None:
+        """
+        Constrói um JInteger a partir de um int ou de uma String decimal.
+
+        Equivalente a:
+            Integer(int value)   — armazena o valor truncado para 32 bits.
+            Integer(String s)    — parseia como parseInt(s, 10).
+
+        Parâmetros
+        ----------
+        value : int | str
+            int → truncado para 32 bits com sinal (overflow silencioso).
+            str → parseado como inteiro decimal com sinal.
+
+        Exceções
+        --------
+        NumberFormatException
+            Se value for str inválida ou fora do intervalo de 32 bits.
+        TypeError
+            Se value não for int (exceto bool) nem str.
+        """
+        if isinstance(value, str):
+            self._value: int = _parse_signed_core(value, 10)
+        elif isinstance(value, int) and not isinstance(value, bool):
+            self._value = _to_int32(value)
+        else:
+            raise TypeError(
+                f"JInteger requer int ou str, recebeu {type(value).__name__}"
+            )
+
+    # ------------------------------------------------------------------
+    # Conversões numéricas de instância (Number subclass equivalents)
+    # ------------------------------------------------------------------
+
+    def byteValue(self) -> int:
+        """
+        Retorna o valor como byte — narrowing para 8 bits com sinal.
+
+        Equivale ao cast (byte) do Java: os 8 bits menos significativos
+        são reinterpretados com sinal (complemento de dois).
+
+        Retorno: int no intervalo [-128, 127].
+        """
+        v = self._value & 0xFF
+        return v - 256 if v >= 128 else v
+
+    def shortValue(self) -> int:
+        """
+        Retorna o valor como short — narrowing para 16 bits com sinal.
+
+        Retorno: int no intervalo [-32768, 32767].
+        """
+        v = self._value & 0xFFFF
+        return v - 65536 if v >= 32768 else v
+    
+    def intValue(self) -> int:
+        """Retorna o valor como int de 32 bits com sinal. Sem perda de informação."""
+        return self._value
+
+    def longValue(self) -> int:
+        """
+        Retorna o valor como long — widening, sem perda de informação.
+
+        Python não distingue int de long; retorna int Python que cobre
+        todo o intervalo de long Java (64 bits).
+        """
+        return self._value
+
+    def floatValue(self) -> float:
+        """
+        Retorna o valor como float IEEE 754 de 32 bits — possível perda de precisão.
+
+        Usa struct para simular a arredondamento exato de single-precision Java.
+        Python float é 64 bits nativamente; a conversão via struct garante que
+        o valor retornado é o float32 mais próximo, como faria a JVM.
+        """
+        return struct.unpack('f', struct.pack('f', float(self._value)))[0]
 
     # ------------------------------------------------------------------
     # Métodos estáticos — parsing
