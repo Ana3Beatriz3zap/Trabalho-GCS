@@ -370,3 +370,22 @@ class JInteger:
         42
         """
         return JInteger.rotateLeft(i, -distance)
+    
+    @staticmethod
+    def signum(i: int) -> int:
+        """
+        Retorna o sinal do inteiro: -1, 0 ou +1.
+
+        Equivalente a Integer.signum(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.signum(-100)
+        -1
+        >>> JInteger.signum(0)
+        0
+        >>> JInteger.signum(42)
+        1
+        """
+        i = _to_int32(i)
+        return (i > 0) - (i < 0)
