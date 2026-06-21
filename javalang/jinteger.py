@@ -133,25 +133,44 @@ def _uint_to_str(i: int, radix: int) -> str:
 
 class _DualMethod:
     """
-    Descritor que permite a um mesmo nome funcionar como método de instância
-    (n.toString(radix)) ou como método estático (JInteger.toString(i, radix)),
-    espelhando as sobrecargas de Integer.toString em Java.
+    Descritor que implementa sobrecarga de contexto Java em Python.
 
-    Acessado via instância: o valor da instância (self._value) é injetado
-    automaticamente como primeiro argumento.
-    Acessado via classe: comporta-se como uma função estática comum.
+    Em Java, ``Integer.toString()`` (instância, zero args) e
+    ``Integer.toString(int i)`` / ``Integer.toString(int i, int radix)``
+    (métodos estáticos) coexistem com o mesmo nome porque o compilador
+    resolve a sobrecarga em tempo de compilação por tipo e aridade.
+
+    Python não tem esse mecanismo; quando se declara um @staticmethod após
+    um método de instância com o mesmo nome, o último simplesmente sobrescreve
+    o primeiro no namespace da classe.
+
+    Este descritor resolve o problema em runtime:
+    - ``obj.método(...)``   → chama ``instance_fn(obj, ...)``
+    - ``Classe.método(...)`` → chama ``static_fn(...)``
+
+    Uso dentro da classe:
+        nome = _DualMethod(instance_fn, static_fn)
     """
 
-    def __init__(self, func):
-        self._func = func
+    def __init__(self, instance_fn, static_fn):
+        self._instance_fn = instance_fn
+        self._static_fn   = static_fn
+        # Herda a documentação do método de instância por convenção.
+        self.__doc__  = instance_fn.__doc__
+        self.__name__ = instance_fn.__name__
+
+    def __set_name__(self, owner, name):
+        self.__name__ = name
 
     def __get__(self, obj, objtype=None):
         if obj is None:
-            # Acesso via classe: JInteger.toString(i, radix)
-            return self._func
-        # Acesso via instância: n.toString(radix) -> func(n._value, radix)
+            # Acesso via classe: Classe.método → retorna o callable estático
+            return self._static_fn
+        # Acesso via instância: obj.método → retorna bound method de instância
         def bound(*args, **kwargs):
-            return self._func(obj._value, *args, **kwargs)
+            return self._instance_fn(obj, *args, **kwargs)
+        bound.__doc__  = self._instance_fn.__doc__
+        bound.__name__ = self.__name__
         return bound
 
 
