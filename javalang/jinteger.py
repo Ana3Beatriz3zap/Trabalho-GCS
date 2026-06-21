@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Union
+import struct
 
 # ---------------------------------------------------------------------------
 # Sentinela para distinguir "argumento não fornecido" de None válido
@@ -345,3 +346,259 @@ class JInteger:
         return _to_int32(value)
 
     hashCode = _DualMethod(_hashCode_instance, _hashCode_static)
+    # ------------------------------------------------------------------
+    # Construtor
+    # ------------------------------------------------------------------
+
+    def __init__(self, value: Union[int, str]) -> None:
+        """
+        Constrói um JInteger a partir de um int ou de uma String decimal.
+
+        Equivalente a:
+            Integer(int value)   — armazena o valor truncado para 32 bits.
+            Integer(String s)    — parseia como parseInt(s, 10).
+
+        Parâmetros
+        ----------
+        value : int | str
+            int → truncado para 32 bits com sinal (overflow silencioso).
+            str → parseado como inteiro decimal com sinal.
+
+        Exceções
+        --------
+        NumberFormatException
+            Se value for str inválida ou fora do intervalo de 32 bits.
+        TypeError
+            Se value não for int (exceto bool) nem str.
+        """
+        if isinstance(value, str):
+            self._value: int = _parse_signed_core(value, 10)
+        elif isinstance(value, int) and not isinstance(value, bool):
+            self._value = _to_int32(value)
+        else:
+            raise TypeError(
+                f"JInteger requer int ou str, recebeu {type(value).__name__}"
+            )
+
+    # ------------------------------------------------------------------
+    # Conversões numéricas de instância (Number subclass equivalents)
+    # ------------------------------------------------------------------
+
+    def byteValue(self) -> int:
+        """
+        Retorna o valor como byte — narrowing para 8 bits com sinal.
+
+        Equivale ao cast (byte) do Java: os 8 bits menos significativos
+        são reinterpretados com sinal (complemento de dois).
+
+        Retorno: int no intervalo [-128, 127].
+        """
+        v = self._value & 0xFF
+        return v - 256 if v >= 128 else v
+
+    def shortValue(self) -> int:
+        """
+        Retorna o valor como short — narrowing para 16 bits com sinal.
+
+        Retorno: int no intervalo [-32768, 32767].
+        """
+        v = self._value & 0xFFFF
+        return v - 65536 if v >= 32768 else v
+    
+    def intValue(self) -> int:
+        """Retorna o valor como int de 32 bits com sinal. Sem perda de informação."""
+        return self._value
+
+    def longValue(self) -> int:
+        """
+        Retorna o valor como long — widening, sem perda de informação.
+
+        Python não distingue int de long; retorna int Python que cobre
+        todo o intervalo de long Java (64 bits).
+        """
+        return self._value
+
+    def floatValue(self) -> float:
+        """
+        Retorna o valor como float IEEE 754 de 32 bits — possível perda de precisão.
+
+        Usa struct para simular a arredondamento exato de single-precision Java.
+        Python float é 64 bits nativamente; a conversão via struct garante que
+        o valor retornado é o float32 mais próximo, como faria a JVM.
+        """
+        return struct.unpack('f', struct.pack('f', float(self._value)))[0]
+    
+    @staticmethod
+    def bitCount(i: int) -> int:
+        """
+        Conta os bits 1 na representação de 32 bits (population count / popcount).
+
+        Algoritmo: Hacker's Delight cap. 5 — soma paralela em pares de bits.
+        Complexidade: O(1) com 5 operações de redução.
+
+        Equivalente a Integer.bitCount(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.bitCount(-1)
+        32
+        >>> JInteger.bitCount(7)
+        3
+        >>> JInteger.bitCount(0)
+        0
+        """
+        n = _to_uint32(i)
+        # Soma pares de bits adjacentes em paralelo
+        n = n - ((n >> 1) & 0x5555_5555)
+        # Soma grupos de 4 bits
+        n = (n & 0x3333_3333) + ((n >> 2) & 0x3333_3333)
+        # Soma grupos de 8 bits; máscara elimina overflow interno
+        n = (n + (n >> 4)) & 0x0F0F_0F0F
+        # Multiplica para acumular nos 8 bits mais altos; shift extrai resultado
+        return ((n * 0x0101_0101) & _MASK32) >> 24
+
+    @staticmethod
+    def highestOneBit(i: int) -> int:
+        """
+        Retorna um valor com apenas o bit 1 mais significativo de i.
+
+        Retorna 0 se i == 0; retorna MIN_VALUE se o bit 31 estiver setado.
+
+        Algoritmo: propaga o bit mais alto progressivamente para baixo via OR,
+        depois isola o topo com (i XOR i>>1) equivalente a (i - i>>1).
+
+        Equivalente a Integer.highestOneBit(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.highestOneBit(10)    # 0b1010 → 0b1000
+        8
+        >>> JInteger.highestOneBit(-1)    # MSB de 0xFFFFFFFF = bit 31
+        -2147483648
+        >>> JInteger.highestOneBit(0)
+        0
+        """
+        n = _to_uint32(i)
+        n |= (n >> 1)
+        n |= (n >> 2)
+        n |= (n >> 4)
+        n |= (n >> 8)
+        n |= (n >> 16)
+        return _to_int32(n - (n >> 1))
+
+    @staticmethod
+    def lowestOneBit(i: int) -> int:
+        """
+        Retorna um valor com apenas o bit 1 menos significativo de i.
+
+        Retorna 0 se i == 0.
+
+        Algoritmo: n & (-n) isola o bit menos significativo em complemento
+        de dois — propriedade fundamental do two's complement.
+
+        Equivalente a Integer.lowestOneBit(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.lowestOneBit(12)    # 0b1100 → 0b0100
+        4
+        >>> JInteger.lowestOneBit(-12)   # same LSB
+        4
+        """
+        u = _to_uint32(i)
+        return _to_int32(u & (-u & _MASK32))
+
+    @staticmethod
+    def numberOfLeadingZeros(i: int) -> int:
+        """
+        Conta zeros à esquerda do bit 1 mais alto na representação de 32 bits.
+
+        Retorna 32 se i == 0.
+
+        Algoritmo: busca binária por halvings (Hacker's Delight §5-3).
+        Em cada passo, testa se os n bits mais altos são todos zero;
+        se sim, descarta a metade inferior e acumula o contador.
+
+        Equivalente a Integer.numberOfLeadingZeros(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.numberOfLeadingZeros(0)
+        32
+        >>> JInteger.numberOfLeadingZeros(1)
+        31
+        >>> JInteger.numberOfLeadingZeros(-1)    # bit 31 setado
+        0
+        """
+        n = _to_uint32(i)
+        if n == 0:
+            return 32
+        count = 0
+        if n <= 0x0000_FFFF: 
+            count += 16; n <<= 16  # noqa: E702
+        if n <= 0x00FF_FFFF: 
+            count += 8;  n <<= 8   # noqa: E702
+        if n <= 0x0FFF_FFFF: 
+            count += 4;  n <<= 4   # noqa: E702
+        if n <= 0x3FFF_FFFF: 
+            count += 2;  n <<= 2   # noqa: E702
+        if n <= 0x7FFF_FFFF: 
+            count += 1              # noqa: E702
+        return count
+
+    @staticmethod
+    def numberOfTrailingZeros(i: int) -> int:
+        """
+        Conta zeros à direita do bit 1 menos significativo na representação de 32 bits.
+
+        Retorna 32 se i == 0.
+
+        Algoritmo: isola o LSB com n & (-n), depois aplica numberOfLeadingZeros
+        e ajusta: NTZ(n) = 31 - NLZ(lowestOneBit(n)).
+
+        Equivalente a Integer.numberOfTrailingZeros(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.numberOfTrailingZeros(0)
+        32
+        >>> JInteger.numberOfTrailingZeros(8)    # 0b1000
+        3
+        >>> JInteger.numberOfTrailingZeros(1)
+        0
+        """
+        n = _to_uint32(i)
+        if n == 0:
+            return 32
+        low = n & (-n & _MASK32)
+        return 31 - JInteger.numberOfLeadingZeros(low)
+
+    @staticmethod
+    def reverse(i: int) -> int:
+        """
+        Inverte a ordem de todos os 32 bits.
+
+        Algoritmo: permutação paralela por trocas de metades sucessivas
+        (Hacker's Delight §7-1). Cinco passos de complexidade O(1):
+          passo 1: troca bits vizinhos (granularidade 1)
+          passo 2: troca pares  (granularidade 2)
+          passo 3: troca nibbles (granularidade 4)
+          passo 4: troca bytes  (granularidade 8)
+          passo 5: troca half-words (granularidade 16)
+
+        Equivalente a Integer.reverse(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.reverse(1)       # 0x00000001 → 0x80000000
+        -2147483648
+        >>> JInteger.reverse(JInteger.reverse(42)) == 42
+        True
+        """
+        n = _to_uint32(i)
+        n = ((n & 0x5555_5555) << 1)  | ((n >> 1)  & 0x5555_5555)
+        n = ((n & 0x3333_3333) << 2)  | ((n >> 2)  & 0x3333_3333)
+        n = ((n & 0x0F0F_0F0F) << 4)  | ((n >> 4)  & 0x0F0F_0F0F)
+        n = ((n & 0x00FF_00FF) << 8)  | ((n >> 8)  & 0x00FF_00FF)
+        n = ((n & 0x0000_FFFF) << 16) | ((n >> 16) & 0x0000_FFFF)
+        return _to_int32(n & _MASK32)
