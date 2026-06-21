@@ -110,7 +110,7 @@ def _int_to_str(i: int, radix: int) -> str:
         i //= radix
     return sign + ''.join(reversed(digits))
 
-    def _uint_to_str(i: int, radix: int) -> str:
+def _uint_to_str(i: int, radix: int) -> str:
         """
         Converte inteiro sem sinal de 32 bits para string no radix dado.
         Núcleo compartilhado de toUnsignedString(int) e toUnsignedString(int, int).
