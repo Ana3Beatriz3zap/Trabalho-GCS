@@ -17,8 +17,8 @@ class NumberFormatException(ValueError):
     """
     Equivalente Python de java.lang.NumberFormatException.
 
-    Subclasse de ValueError para manter compatibilidade com código Python
-    que captura ValueError, permitendo também captura específica desta exceção.
+    Subclasse de ValueError para manter compatibilidade com código s
+    que captura ValueError, permitindo também captura específica desta exceção.
     """
 
 
@@ -48,6 +48,7 @@ def _to_uint32(value: int) -> int:
 def _check_radix_silent(radix: int) -> int:
     """Retorna radix válido ou 10 — comportamento Java para toString/toUnsignedString."""
     return radix if _MIN_RADIX <= radix <= _MAX_RADIX else 10
+
 
 def _check_radix_strict(radix: int) -> None:
     """Lança NumberFormatException se radix fora de [2, 36] — usado em parseInt."""
@@ -111,6 +112,8 @@ def _int_to_str(i: int, radix: int) -> str:
     return sign + ''.join(reversed(digits))
 
 def _uint_to_str(i: int, radix: int) -> str:
+    """
+    Converte um inteiro para string interpretando-o como unsigned de 32 bits.
         """
         Converte inteiro sem sinal de 32 bits para string no radix dado.
         Núcleo compartilhado de toUnsignedString(int) e toUnsignedString(int, int).
@@ -132,44 +135,41 @@ def _uint_to_str(i: int, radix: int) -> str:
 
 class _DualMethod:
     """
-    Descritor que implementa sobrecarga de contexto Java em Python.
+    radix = _check_radix_silent(radix)
+    value = _to_uint32(i)
 
-    Em Java, ``Integer.toString()`` (instância, zero args) e
-    ``Integer.toString(int i)`` / ``Integer.toString(int i, int radix)``
-    (métodos estáticos) coexistem com o mesmo nome porque o compilador
-    resolve a sobrecarga em tempo de compilação por tipo e aridade.
+    if value == 0:
+        return "0"
 
-    Python não tem esse mecanismo; quando se declara um @staticmethod após
-    um método de instância com o mesmo nome, o último simplesmente sobrescreve
-    o primeiro no namespace da classe.
+    digits = []
+    while value:
+        digits.append(_DIGITS[value % radix])
+        value //= radix
 
-    Este descritor resolve o problema em runtime:
-    - ``obj.método(...)``   → chama ``instance_fn(obj, ...)``
-    - ``Classe.método(...)`` → chama ``static_fn(...)``
+    return ''.join(reversed(digits))
 
-    Uso dentro da classe:
-        nome = _DualMethod(instance_fn, static_fn)
+
+class _DualMethod:
+    """
+    Descritor que permite a um mesmo nome funcionar como método de instância
+    (n.toString(radix)) ou como método estático (JInteger.toString(i, radix)),
+    espelhando as sobrecargas de Integer.toString em Java.
+
+    Acessado via instância: o valor da instância (self._value) é injetado
+    automaticamente como primeiro argumento.
+    Acessado via classe: comporta-se como uma função estática comum.
     """
 
-    def __init__(self, instance_fn, static_fn):
-        self._instance_fn = instance_fn
-        self._static_fn   = static_fn
-        # Herda a documentação do método de instância por convenção.
-        self.__doc__  = instance_fn.__doc__
-        self.__name__ = instance_fn.__name__
-
-    def __set_name__(self, owner, name):
-        self.__name__ = name
+    def __init__(self, func):
+        self._func = func
 
     def __get__(self, obj, objtype=None):
         if obj is None:
-            # Acesso via classe: Classe.método → retorna o callable estático
-            return self._static_fn
-        # Acesso via instância: obj.método → retorna bound method de instância
+            # Acesso via classe: JInteger.toString(i, radix)
+            return self._func
+        # Acesso via instância: n.toString(radix) -> func(n._value, radix)
         def bound(*args, **kwargs):
-            return self._instance_fn(obj, *args, **kwargs)
-        bound.__doc__  = self._instance_fn.__doc__
-        bound.__name__ = self.__name__
+            return self._func(obj._value, *args, **kwargs)
         return bound
 
 
@@ -187,9 +187,6 @@ class JInteger:
     Encapsula um inteiro de 32 bits com sinal e expõe toda a API pública
     da especificação Java, incluindo constantes, construtores, métodos de
     instância e métodos estáticos, com nomes camelCase preservados.
-
-    Sobrecargas Java resolvidas por _DualMethod (contexto instância/classe)
-    e por parâmetros sentinela _MISSING (aridade variável).
 
     Exemplos
     --------
@@ -209,6 +206,77 @@ class JInteger:
      JInteger.toBinaryString(-1)
     '11111111111111111111111111111111'
     """
+
+    # ------------------------------------------------------------------
+    # Formatação por base — métodos estáticos
+    # ------------------------------------------------------------------
+    @staticmethod
+    def toBinaryString(i: int) -> str:
+        """
+        Retorna representação binária do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toBinaryString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toBinaryString(-1)
+        '11111111111111111111111111111111'
+        >>> JInteger.toBinaryString(4)
+        '100'
+        """
+        return _uint_to_str(i, 2)
+
+    @staticmethod
+    def toHexString(i: int) -> str:
+        """
+        Retorna representação hexadecimal do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toHexString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toHexString(255)
+        'ff'
+        >>> JInteger.toHexString(-1)
+        'ffffffff'
+        """
+        return _uint_to_str(i, 16)
+
+    @staticmethod
+    def toOctalString(i: int) -> str:
+        """
+        Retorna representação octal do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toOctalString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toOctalString(-1)
+        '37777777777'
+        >>> JInteger.toOctalString(8)
+        '10'
+        """
+        return _uint_to_str(i, 8)
+
+    @staticmethod
+    def toUnsignedString(i: int, radix: int = 10) -> str:
+        """
+        Retorna representação em string do inteiro como valor sem sinal de 32 bits.
+
+        Equivalente a:
+            Integer.toUnsignedString(int i)
+            Integer.toUnsignedString(int i, int radix)
+
+        Se radix fora de [2, 36], usa 10.
+
+        Exemplos
+        --------
+        >>> JInteger.toUnsignedString(-1)
+        '4294967295'
+        >>> JInteger.toUnsignedString(-1, 16)
+        'ffffffff'
+        """
+        return _uint_to_str(i, radix)
 
     # ------------------------------------------------------------------
     # Constantes de classe
@@ -282,7 +350,7 @@ class JInteger:
         """
         v = self._value & 0xFFFF
         return v - 65536 if v >= 32768 else v
-    
+
     def intValue(self) -> int:
         """Retorna o valor como int de 32 bits com sinal. Sem perda de informação."""
         return self._value
