@@ -36,4 +36,16 @@ class TestConversions:
     # --- byteValue ---
     def test_byte_value_small_positive(self):
         assert JFloat(65.0).byteValue() == 65
+    
+    def test_byte_value_wraps_positive(self):
+        # 200 & 0xFF = 200 → 200 - 256 = -56
+        assert JFloat(200.0).byteValue() == -56
+    
+    # --- shortValue ---
+
+    def test_short_value_normal(self):
+        assert JFloat(32767.0).shortValue() == 32767
+
+    def test_short_value_wraps(self):
+        assert JFloat(32768.0).shortValue() == -32768
 
