@@ -48,3 +48,14 @@ class TestLongValue:
 class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
+
+class TestParseUnsignedInt:
+    def test_string_decimal_simples(self):
+        assert JInteger.parseUnsignedInt("ff", 16) == 255
+ 
+    def test_valor_acima_de_max_value_retorna_negativo(self):
+        assert JInteger.parseUnsignedInt("4294967295") == -1
+
+class TestValueOf:
+    def test_valor_a_partir_de_string_com_radix(self):
+        assert JInteger.valueOf("ff", 16).intValue() == 255
