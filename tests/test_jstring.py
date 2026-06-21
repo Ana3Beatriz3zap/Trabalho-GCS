@@ -49,6 +49,12 @@ class TestConstructors:
         chars = ["H", "i", "!"]
         s = JString(chars)
         assert str(s) == "Hi!"
+        
+    def test_from_bytes_happy(self):
+        """String(byte[]) decodifica UTF-8 por padrão."""
+        b = "hello".encode("utf-8")
+        s = JString(b)
+        assert str(s) == "hello"
  
  
  
