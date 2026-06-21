@@ -64,3 +64,14 @@ class TestDoubleValue:
 class TestEquals:
     def test_mesmo_valor_retorna_true(self):
         assert JInteger(5).equals(JInteger(5)) is True
+        
+    def test_valores_diferentes_retorna_false(self):
+        assert JInteger(5).equals(JInteger(6)) is False
+
+@pytest.mark.skip(reason="Ainda não implementado na main")
+class TestCompareTo:
+    def test_este_menor_que_outro_retorna_negativo(self):
+        assert JInteger(1).compareTo(JInteger(2)) < 0
+ 
+    def test_valores_iguais_retorna_zero(self):
+        assert JInteger(5).compareTo(JInteger(5)) == 0
