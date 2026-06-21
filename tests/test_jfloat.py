@@ -16,3 +16,19 @@ class TestConstructors:
     def test_string_constructor_negative_infinity(self):
         f = JFloat("-Infinity")
         assert f.isInfinite() and f.floatValue() < 0
+
+# ===========================================================================
+# 3. Narrowing/widening conversions
+# ===========================================================================
+class TestConversions:
+    # --- intValue ---
+    def test_int_value_positive_truncates(self):
+        assert JFloat(3.9).intValue() == 3
+    
+    def test_int_value_negative_truncates(self):
+        assert JFloat(-3.9).intValue() == -3
+    
+    # --- longValue ---
+    def test_long_value_positive(self):
+        assert JFloat(3.7).longValue() == 3
+
