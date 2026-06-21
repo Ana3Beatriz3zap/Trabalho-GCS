@@ -112,8 +112,6 @@ def _int_to_str(i: int, radix: int) -> str:
     return sign + ''.join(reversed(digits))
 
 def _uint_to_str(i: int, radix: int) -> str:
-    """
-    Converte um inteiro para string interpretando-o como unsigned de 32 bits.
         """
         Converte inteiro sem sinal de 32 bits para string no radix dado.
         Núcleo compartilhado de toUnsignedString(int) e toUnsignedString(int, int).
@@ -131,22 +129,6 @@ def _uint_to_str(i: int, radix: int) -> str:
 # ---------------------------------------------------------------------------
 # Descritor _DualMethod — despacho por contexto (instância vs. classe)
 # ---------------------------------------------------------------------------
-
-
-class _DualMethod:
-    """
-    radix = _check_radix_silent(radix)
-    value = _to_uint32(i)
-
-    if value == 0:
-        return "0"
-
-    digits = []
-    while value:
-        digits.append(_DIGITS[value % radix])
-        value //= radix
-
-    return ''.join(reversed(digits))
 
 
 class _DualMethod:
