@@ -1,5 +1,10 @@
 import pytest
+import struct
 from javalang.jfloat import JFloat
+
+def f32(v: float) -> float:
+    """Round-trip through float32 (same as JFloat's internal _to_float32)."""
+    return struct.unpack('>f', struct.pack('>f', v))[0]
 
 # ===========================================================================
 # 2. Constructors
@@ -77,5 +82,6 @@ class TestToString:
     # --- Special values ---
     def test_zero(self):
         assert JFloat(0.0).toString() == "0.0"
+
     def test_neg_zero(self):
         assert JFloat(-0.0).toString() == "-0.0"
