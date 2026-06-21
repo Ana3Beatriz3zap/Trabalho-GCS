@@ -82,4 +82,32 @@ def _from_char_list(chars: list[str]) -> str:
         result.append(chars[i])
         i += 1
     return "".join(result)
+
+def _validate_not_none(value: object, name: str = "value") -> None:
+    """Lança NullPointerException equivalente (ValueError) se None."""
+    if value is None:
+        raise ValueError(f"NullPointerException: {name} is null")
+ 
+ 
+def _validate_index(index: int, length: int) -> None:
+    """Lança StringIndexOutOfBoundsException equivalente."""
+    if not (0 <= index < length):
+        raise IndexError(
+            f"StringIndexOutOfBoundsException: index {index}, length {length}"
+        )
+ 
+ 
+def _validate_range(begin: int, end: int, length: int) -> None:
+    """Valida intervalo [begin, end) dentro de [0, length]."""
+    if begin < 0:
+        raise IndexError(f"StringIndexOutOfBoundsException: begin {begin} < 0")
+    if end > length:
+        raise IndexError(
+            f"StringIndexOutOfBoundsException: end {end} > length {length}"
+        )
+    if begin > end:
+        raise IndexError(
+            f"StringIndexOutOfBoundsException: begin {begin} > end {end}"
+        )
+ 
  
