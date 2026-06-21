@@ -110,4 +110,88 @@ def _validate_range(begin: int, end: int, length: int) -> None:
             f"StringIndexOutOfBoundsException: begin {begin} > end {end}"
         )
  
+
+# ---------------------------------------------------------------------------
+# Classe principal
+# ---------------------------------------------------------------------------
+ 
+ 
+class JString:
+    """Implementação Python fiel à java.lang.String (Java SE 8).
+ 
+    Todos os métodos preservam a semântica Java incluindo:
+    - Indexação por code units UTF-16 (não code points)
+    - Comportamento de null → ValueError (NullPointerException)
+    - Retorno de novas instâncias em transformações (imutabilidade)
+    """
+ 
+    # ------------------------------------------------------------------
+    # Construtores
+    # ------------------------------------------------------------------
+ 
+    def __init__(
+        self,
+        value: Union[str, "JString", list, bytes, None] = None,
+        charset: Optional[str] = None,
+        offset: Optional[int] = None,
+        count: Optional[int] = None,
+    ) -> None:
+        """Implementa os construtores Java String.
+ 
+        Mapeamentos:
+          String()                        → JString()
+          String(String original)         → JString(jstring_or_str)
+          String(char[] value)            → JString(list_of_chars)
+          String(char[], offset, count)   → JString(list_of_chars, offset=o, count=c)
+          String(byte[] bytes)            → JString(bytes_obj)
+          String(byte[], charset)         → JString(bytes_obj, charset=cs)
+          String(byte[], offset, count)   → JString(bytes_obj, offset=o, count=c)
+          String(StringBuilder)           → JString(str_or_jstring)
+        """
+        if value is None:
+            self._chars: list[str] = []
+        elif isinstance(value, JString):
+            self._chars = list(value._chars)
+        elif isinstance(value, str):
+            self._chars = _to_char_list(value)
+        elif isinstance(value, (bytes, bytearray)):
+            cs = _resolve_charset(charset) if charset else "utf-8"
+            raw = bytes(value)
+            if offset is not None and count is not None:
+                raw = raw[offset: offset + count]
+            self._chars = _to_char_list(raw.decode(cs))
+            return
+        elif isinstance(value, list):
+            # char[] or int[] (code points)
+            if len(value) == 0:
+                self._chars = []
+            elif isinstance(value[0], str):
+                # char[]
+                chars = value
+                if offset is not None and count is not None:
+                    chars = value[offset: offset + count]
+                self._chars = list(chars)
+            elif isinstance(value[0], int):
+                # int[] codePoints
+                if offset is None or count is None:
+                    raise ValueError("int[] codePoints requires offset and count")
+                segment = value[offset: offset + count]
+                self._chars = _to_char_list(
+                    "".join(chr(cp) for cp in segment)
+                )
+            else:
+                raise TypeError(
+                    f"Unsupported list element type: {type(value[0])}"
+                )
+        else:
+            raise TypeError(f"Unsupported type for JString: {type(value)}")
+ 
+        # Para byte[] sem charset já retornou acima;
+        # para demais casos, offset/count aplicam-se à lista de chars.
+        if isinstance(value, list):
+            pass  # já tratado acima
+        elif offset is not None and count is not None and not isinstance(
+            value, (bytes, bytearray)
+        ):
+            self._chars = self._chars[offset: offset + count]
  
