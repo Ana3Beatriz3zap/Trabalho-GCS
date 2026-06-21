@@ -59,4 +59,14 @@ class TestCompareUnsigned:
 class TestDivideUnsigned:
     def test_divisao_simples(self):
         assert JInteger.divideUnsigned(10, 3) == 3
+    
+    def test_dividendo_negativo_interpretado_como_unsigned(self):
+        assert JInteger.divideUnsigned(-1, 2) == JInteger.MAX_VALUE
+ 
+class TestRemainderUnsigned:
+    def test_resto_simples(self):
+        assert JInteger.remainderUnsigned(10, 3) == 1
+ 
+    def test_dividendo_negativo_interpretado_como_unsigned(self):
+        assert JInteger.remainderUnsigned(-1, 2) == 1
  
