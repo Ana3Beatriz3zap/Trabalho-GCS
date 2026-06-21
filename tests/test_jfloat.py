@@ -54,3 +54,26 @@ class TestIEEEChecks:
     # --- isFinite (static only) ---
     def test_is_finite_normal(self):
         assert JFloat.isFinite(1.0) is True
+
+
+# ===========================================================================
+# 5. parseFloat
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestParseFloat:
+
+    def test_parse_simple(self):
+        assert JFloat.parseFloat("1.5") == f32(1.5)
+
+    def test_parse_negative(self):
+        assert JFloat.parseFloat("-3.14") == f32(-3.14)
+
+# ===========================================================================
+# 6. toString / toHexString
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestToString:
+
+    # --- Special values ---
+    def test_zero(self):
+        assert JFloat(0.0).toString() == "0.0"
