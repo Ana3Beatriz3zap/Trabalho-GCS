@@ -65,3 +65,7 @@ class TestToString:
 class TestHashCode:
     def test_instancia_sem_argumentos(self):
         assert JInteger(42).hashCode() == 42
+
+    def test_estatico_com_valor_negativo(self):
+        assert JInteger.hashCode(-1) == -1
+ 
