@@ -71,3 +71,6 @@ class TestRotateLeft:
  
     def test_bit_de_sinal_rotaciona_para_lsb(self):
         assert JInteger.rotateLeft(JInteger.MIN_VALUE, 1) == 1
+        
+    def test_distancia_multipla_de_32_e_noop(self):
+        assert JInteger.rotateLeft(42, 32) == 42
