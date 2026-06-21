@@ -48,3 +48,16 @@ class TestLongValue:
 class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
+
+
+class TestToUnsignedString:
+    def test_valor_positivo_simples(self):
+        assert JInteger.toUnsignedString(5) == '5'
+ 
+    def test_negativo_em_radix_16(self):
+        assert JInteger.toUnsignedString(-1, 16) == 'ffffffff'
+
+
+class TestReverseBytes:
+    def test_valor_simples(self):
+        assert JInteger.reverseBytes(0x12345678) == 0x78563412
