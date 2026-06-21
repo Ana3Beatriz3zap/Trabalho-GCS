@@ -51,10 +51,22 @@ class TestFloatValue:
 
     def test_conversao_valor_negativo(self):
         assert JInteger(-42).floatValue() == -42.0
-        
+
 class TestToBinaryString:
     def test_valor_positivo_simples(self):
         assert JInteger.toBinaryString(4) == '100'
  
     def test_negativo_interpretado_como_unsigned_32_bits(self):
         assert JInteger.toBinaryString(-1) == '1' * 32
+
+class TestToHexString:
+    def test_valor_positivo_simples(self):
+        assert JInteger.toHexString(255) == 'ff'
+ 
+    def test_negativo_interpretado_como_unsigned_32_bits(self):
+        assert JInteger.toHexString(-1) == 'ffffffff'
+
+class TestToOctalString:
+    def test_valor_positivo_simples(self):
+        assert JInteger.toOctalString(8) == '10'
+ 
