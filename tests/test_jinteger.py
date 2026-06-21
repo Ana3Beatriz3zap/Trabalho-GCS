@@ -49,6 +49,31 @@ class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
 
+class TestNumberOfLeadingZeros:
+    def test_valor_um_tem_31_zeros_a_esquerda(self):
+        assert JInteger.numberOfLeadingZeros(1) == 31
+ 
+    def test_zero_retorna_32(self):
+        assert JInteger.numberOfLeadingZeros(0) == 32
+
+class TestNumberOfTrailingZeros:
+    def test_valor_oito_tem_3_zeros_a_direita(self):
+        assert JInteger.numberOfTrailingZeros(8) == 3
+
+    def test_zero_retorna_32(self):
+        assert JInteger.numberOfTrailingZeros(0) == 32
+
+class TestReverse:
+    def test_bit_unico_vai_para_extremo_oposto(self):
+        assert JInteger.reverse(1) == JInteger.MIN_VALUE
+ 
+    def test_reverse_de_reverse_retorna_valor_original(self):
+        assert JInteger.reverse(JInteger.reverse(42)) == 42
+        
+class TestSignum:
+    def test_valor_positivo(self):
+        assert JInteger.signum(42) == 1
+ 
 class TestRotateRight:
     def test_rotacao_simples(self):
         assert JInteger.rotateRight(1, 1) == JInteger.MIN_VALUE
