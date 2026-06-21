@@ -48,3 +48,15 @@ class TestLongValue:
 class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
+
+
+class TestSum:
+    def test_soma_simples(self):
+        assert JInteger.sum(2, 3) == 5
+ 
+    def test_overflow_estoura_para_min_value(self):
+        assert JInteger.sum(JInteger.MAX_VALUE, 1) == JInteger.MIN_VALUE
+        
+class TestMax:
+    def test_segundo_argumento_maior(self):
+        assert JInteger.max(2, 3) == 3
