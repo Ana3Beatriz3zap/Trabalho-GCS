@@ -73,3 +73,103 @@ class TestRemainderUnsigned:
 class TestParseInt:
     def test_string_decimal_simples(self):
         assert JInteger.parseInt("473") == 473
+
+class TestSum:
+    def test_soma_simples(self):
+        assert JInteger.sum(2, 3) == 5
+ 
+    def test_overflow_estoura_para_min_value(self):
+        assert JInteger.sum(JInteger.MAX_VALUE, 1) == JInteger.MIN_VALUE
+
+class TestMax:
+    def test_segundo_argumento_maior(self):
+        assert JInteger.max(2, 3) == 3
+
+    def test_comparacao_entre_negativos(self):
+        assert JInteger.max(-5, -1) == -1
+
+class TestMin:
+    def test_primeiro_argumento_menor(self):
+        assert JInteger.min(2, 3) == 2
+ 
+    def test_comparacao_entre_negativos(self):
+        assert JInteger.min(-5, -1) == -5
+  
+class TestCompare:
+    def test_x_menor_que_y_retorna_negativo(self):
+        assert JInteger.compare(1, 2) < 0
+class TestNumberOfLeadingZeros:
+    def test_valor_um_tem_31_zeros_a_esquerda(self):
+        assert JInteger.numberOfLeadingZeros(1) == 31
+ 
+    def test_zero_retorna_32(self):
+        assert JInteger.numberOfLeadingZeros(0) == 32
+
+class TestNumberOfTrailingZeros:
+    def test_valor_oito_tem_3_zeros_a_direita(self):
+        assert JInteger.numberOfTrailingZeros(8) == 3
+
+    def test_zero_retorna_32(self):
+        assert JInteger.numberOfTrailingZeros(0) == 32
+
+class TestReverse:
+    def test_bit_unico_vai_para_extremo_oposto(self):
+        assert JInteger.reverse(1) == JInteger.MIN_VALUE
+ 
+    def test_reverse_de_reverse_retorna_valor_original(self):
+        assert JInteger.reverse(JInteger.reverse(42)) == 42
+        
+class TestSignum:
+    def test_valor_positivo(self):
+        assert JInteger.signum(42) == 1
+ 
+class TestRotateRight:
+    def test_rotacao_simples(self):
+        assert JInteger.rotateRight(1, 1) == JInteger.MIN_VALUE
+ 
+    def test_distancia_multipla_de_32_e_noop(self):
+        assert JInteger.rotateRight(42, 32) == 42
+ 
+ 
+class TestBitCount:
+    def test_valor_positivo_simples(self):
+        assert JInteger.bitCount(7) == 3
+
+    def test_todos_os_bits_setados(self):
+        assert JInteger.bitCount(-1) == 32
+
+class TestHighestOneBit:
+    def test_valor_positivo_simples(self):
+        assert JInteger.highestOneBit(10) == 8
+ 
+    def test_bit_31_setado_retorna_min_value(self):
+        assert JInteger.highestOneBit(-1) == JInteger.MIN_VALUE
+
+class TestLowestOneBit:
+    def test_valor_positivo_simples(self):
+        assert JInteger.lowestOneBit(12) == 4
+
+class TestToUnsignedString:
+    def test_valor_positivo_simples(self):
+        assert JInteger.toUnsignedString(5) == '5'
+ 
+    def test_negativo_em_radix_16(self):
+        assert JInteger.toUnsignedString(-1, 16) == 'ffffffff'
+
+
+class TestReverseBytes:
+    def test_valor_simples(self):
+        assert JInteger.reverseBytes(0x12345678) == 0x78563412
+
+    def test_zero_permanece_zero(self):
+        assert JInteger.reverseBytes(0) == 0
+    
+class TestRotateLeft:
+    def test_rotacao_simples(self):
+        assert JInteger.rotateLeft(1, 1) == 2
+ 
+    def test_bit_de_sinal_rotaciona_para_lsb(self):
+        assert JInteger.rotateLeft(JInteger.MIN_VALUE, 1) == 1
+        
+    def test_distancia_multipla_de_32_e_noop(self):
+        assert JInteger.rotateLeft(42, 32) == 42
