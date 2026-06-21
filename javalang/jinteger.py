@@ -305,6 +305,110 @@ class JInteger:
         o valor retornado é o float32 mais próximo, como faria a JVM.
         """
         return struct.unpack('f', struct.pack('f', float(self._value)))[0]
+    
+    @staticmethod
+    def sum(a: int, b: int) -> int:
+        """
+        Soma dois inteiros com comportamento de overflow Java (silencioso).
+
+        MAX_VALUE + 1 == MIN_VALUE, exatamente como em Java.
+
+        Equivalente a Integer.sum(int a, int b).
+
+        Exemplos
+        --------
+        >>> JInteger.sum(2147483647, 1)
+        -2147483648
+        """
+        return _to_int32(a + b)
+
+    @staticmethod
+    def max(a: int, b: int) -> int:
+        """
+        Retorna o maior entre dois inteiros de 32 bits com sinal.
+
+        Equivalente a Integer.max(int a, int b).
+        """
+        return a if _to_int32(a) >= _to_int32(b) else b
+
+    @staticmethod
+    def min(a: int, b: int) -> int:
+        """
+        Retorna o menor entre dois inteiros de 32 bits com sinal.
+
+        Equivalente a Integer.min(int a, int b).
+        """
+        return a if _to_int32(a) <= _to_int32(b) else b
+    
+    @staticmethod
+    def compare(x: int, y: int) -> int:
+        """
+        Compara numericamente dois inteiros de 32 bits com sinal.
+
+        Retorna: 0 se iguais, valor negativo se x < y, positivo se x > y.
+
+        Equivalente a Integer.compare(int x, int y).
+        """
+        x, y = _to_int32(x), _to_int32(y)
+        return (x > y) - (x < y)
+
+    @staticmethod
+    def compareUnsigned(x: int, y: int) -> int:
+        """
+        Compara dois inteiros de 32 bits como valores sem sinal.
+
+        -1 é interpretado como 4294967295 (maior que qualquer valor positivo).
+
+        Equivalente a Integer.compareUnsigned(int x, int y).
+
+        Exemplos
+        --------
+        >>> JInteger.compareUnsigned(-1, 1)    # 0xFFFFFFFF > 1
+        1
+        >>> JInteger.compareUnsigned(-1, -1)
+        0
+        """
+        ux, uy = _to_uint32(x), _to_uint32(y)
+        return (ux > uy) - (ux < uy)
+
+    @staticmethod
+    def divideUnsigned(dividend: int, divisor: int) -> int:
+        """
+        Divisão inteira tratando ambos os operandos como unsigned de 32 bits.
+
+        Equivalente a Integer.divideUnsigned(int dividend, int divisor).
+
+        Exceções
+        --------
+        ZeroDivisionError
+            Se divisor for zero.
+
+        Exemplos
+        --------
+        >>> JInteger.divideUnsigned(-1, 2)    # 4294967295 // 2
+        2147483647
+        """
+        return _to_int32(_to_uint32(dividend) // _to_uint32(divisor))
+
+    
+    @staticmethod
+    def remainderUnsigned(dividend: int, divisor: int) -> int:
+        """
+        Resto da divisão inteira tratando ambos os operandos como unsigned de 32 bits.
+
+        Equivalente a Integer.remainderUnsigned(int dividend, int divisor).
+
+        Exceções
+        --------
+        ZeroDivisionError
+            Se divisor for zero.
+
+        Exemplos
+        --------
+        >>> JInteger.remainderUnsigned(-1, 2)    # 4294967295 % 2
+        1
+        """
+        return _to_int32(_to_uint32(dividend) % _to_uint32(divisor))
 
     # ------------------------------------------------------------------
     # Métodos estáticos — parsing
