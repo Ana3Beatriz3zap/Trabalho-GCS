@@ -179,6 +179,7 @@ class _DualMethod:
 
 _cache: dict[int, 'JInteger'] = {}
 
+
 class JInteger:
     """
     Equivalente Python de java.lang.Integer (Java SE 8).
@@ -304,6 +305,214 @@ class JInteger:
         o valor retornado é o float32 mais próximo, como faria a JVM.
         """
         return struct.unpack('f', struct.pack('f', float(self._value)))[0]
+
+    # ------------------------------------------------------------------
+    # Métodos estáticos — parsing
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def parseInt(s: Optional[str], radix: int = 10) -> int:
+        """
+        Parseia a string como inteiro com sinal no radix dado.
+
+        Equivalente a:
+            Integer.parseInt(String s)           — radix = 10
+            Integer.parseInt(String s, int radix)
+
+        A string pode ter '+' ou '-' como primeiro caractere.
+        Radix deve estar em [2, 36]; fora disso lança NumberFormatException.
+
+        Exceções
+        --------
+        NumberFormatException
+            String nula, vazia, com caracteres inválidos para o radix,
+            radix fora de [2, 36], ou valor fora de [-2147483648, 2147483647].
+
+        Exemplos
+        --------
+        >>> JInteger.parseInt("473")
+        473
+        >>> JInteger.parseInt("-FF", 16)
+        -255
+        >>> JInteger.parseInt("Kona", 27)
+        411787
+        """
+        return _parse_signed_core(s, radix)
+
+    @staticmethod
+    def parseUnsignedInt(s: Optional[str], radix: int = 10) -> int:
+        """
+        Parseia a string como inteiro sem sinal no radix dado.
+
+        Valores entre 2^31 e 2^32-1 (maiores que MAX_VALUE) são retornados
+        como inteiros negativos de 32 bits com sinal — comportamento Java.
+
+        Equivalente a:
+            Integer.parseUnsignedInt(String s)
+            Integer.parseUnsignedInt(String s, int radix)
+
+        Exceções
+        --------
+        NumberFormatException
+            String nula, vazia, com sinal negativo, valor > 4294967295,
+            radix fora de [2, 36], ou caracteres inválidos.
+
+        Exemplos
+        --------
+        >>> JInteger.parseUnsignedInt("4294967295")
+        -1
+        >>> JInteger.parseUnsignedInt("ff", 16)
+        255
+        """
+        if s is None or len(s) == 0:
+            raise NumberFormatException("Argumento nulo ou string vazia")
+        _check_radix_strict(radix)
+
+        idx = 0
+        if s[0] == '+':
+            idx = 1
+        elif s[0] == '-':
+            raise NumberFormatException(
+                f'parseUnsignedInt não aceita sinal negativo: "{s}"'
+            )
+
+        if idx >= len(s):
+            raise NumberFormatException(f'Para string: "{s}"')
+
+        try:
+            value = int(s[idx:], radix)
+        except ValueError:
+            raise NumberFormatException(f'Para string: "{s}"')
+
+        if value < 0 or value > 0xFFFF_FFFF:
+            raise NumberFormatException(
+                f'Valor fora do intervalo unsigned [0, 4294967295]: "{s}"'
+            )
+
+        return _to_int32(value)
+
+    # ------------------------------------------------------------------
+    # valueOf — aridade 1 ou 2, despacho por tipo do primeiro argumento
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def valueOf(value: Union[int, str], radix: int = 10) -> 'JInteger':
+        """
+        Retorna um JInteger representando o valor especificado.
+
+        Equivalente a:
+            Integer.valueOf(int i)
+            Integer.valueOf(String s)         — radix implícito 10
+            Integer.valueOf(String s, int radix)
+
+        Implementa o Integer cache Java: para valores em [-128, 127] retorna
+        sempre o mesmo objeto (identidade garantida por especificação).
+
+        Parâmetros
+        ----------
+        value : int | str
+            int → usado diretamente (truncado para 32 bits).
+            str → parseado com parseInt(value, radix).
+        radix : int
+            Base numérica, usada apenas quando value é str. Default 10.
+
+        Exemplos
+        --------
+        >>> JInteger.valueOf(42).intValue()
+        42
+        >>> JInteger.valueOf("ff", 16).intValue()
+        255
+        >>> JInteger.valueOf(-128) is JInteger.valueOf(-128)
+        True
+        """
+        if isinstance(value, str):
+            parsed = _parse_signed_core(value, radix)
+        elif isinstance(value, int) and not isinstance(value, bool):
+            parsed = _to_int32(value)
+        else:
+            raise TypeError(
+                f"valueOf requer int ou str, recebeu {type(value).__name__}"
+            )
+
+        # Integer cache [-128, 127]
+        if -128 <= parsed <= 127:
+            if parsed not in _cache:
+                obj = object.__new__(JInteger)
+                obj._value = parsed
+                _cache[parsed] = obj
+            return _cache[parsed]
+
+        return JInteger(parsed)
+    
+    # ------------------------------------------------------------------
+    # decode
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def decode(nm: Optional[str]) -> 'JInteger':
+        """
+        Decodifica uma String para JInteger aceitando decimal, hex e octal.
+
+        Formatos aceitos (sinal '+'/'-' opcional antes do prefixo):
+            decimal      → "42", "-42", "+42"
+            hexadecimal  → "0x1F", "0X1F", "#1F"
+            octal        → "017"
+
+        Equivalente a Integer.decode(String nm).
+
+        Exceções
+        --------
+        NumberFormatException
+            nm nulo, vazio, formato inválido, ou valor fora de [-2^31, 2^31-1].
+
+        Exemplos
+        --------
+        >>> JInteger.decode("0xFF").intValue()
+        255
+        >>> JInteger.decode("-017").intValue()
+        -15
+        """
+        if nm is None or len(nm) == 0:
+            raise NumberFormatException("decode: argumento nulo ou string vazia")
+
+        s = nm.strip()
+        if not s:
+            raise NumberFormatException("decode: string em branco")
+
+        negative = False
+        idx = 0
+        if s[0] == '-':
+            negative = True
+            idx = 1
+        elif s[0] == '+':
+            idx = 1
+
+        radix = 10
+        if s[idx:idx + 2].lower() == '0x':
+            radix = 16
+            idx += 2
+        elif s[idx:idx + 1] == '#':
+            radix = 16
+            idx += 1
+        elif s[idx:idx + 1] == '0' and len(s) > idx + 1:
+            radix = 8
+            idx += 1
+
+        digits = s[idx:]
+        if not digits:
+            raise NumberFormatException(f'decode: sem dígitos em "{nm}"')
+
+        try:
+            magnitude = int(digits, radix)
+        except ValueError:
+            raise NumberFormatException(f'decode: "{nm}" não é um inteiro válido')
+
+        value = -magnitude if negative else magnitude
+
+        if value < -(2**31) or value > (2**31 - 1):
+            raise NumberFormatException(f'decode: valor fora do intervalo: "{nm}"')
+
+        return JInteger.valueOf(value)
     
     @staticmethod
     def bitCount(i: int) -> int:
