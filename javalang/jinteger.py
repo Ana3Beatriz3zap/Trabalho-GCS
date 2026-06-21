@@ -128,6 +128,31 @@ def _uint_to_str(i: int, radix: int) -> str:
 
     return ''.join(reversed(digits))
 
+
+class _DualMethod:
+    """
+    Descritor que permite a um mesmo nome funcionar como método de instância
+    (n.toString(radix)) ou como método estático (JInteger.toString(i, radix)),
+    espelhando as sobrecargas de Integer.toString em Java.
+
+    Acessado via instância: o valor da instância (self._value) é injetado
+    automaticamente como primeiro argumento.
+    Acessado via classe: comporta-se como uma função estática comum.
+    """
+
+    def __init__(self, func):
+        self._func = func
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            # Acesso via classe: JInteger.toString(i, radix)
+            return self._func
+        # Acesso via instância: n.toString(radix) -> func(n._value, radix)
+        def bound(*args, **kwargs):
+            return self._func(obj._value, *args, **kwargs)
+        return bound
+
+
 class JInteger:
     """
     Equivalente Python de java.lang.Integer (Java SE 8).
@@ -135,9 +160,6 @@ class JInteger:
     Encapsula um inteiro de 32 bits com sinal e expõe toda a API pública
     da especificação Java, incluindo constantes, construtores, métodos de
     instância e métodos estáticos, com nomes camelCase preservados.
-
-    Sobrecargas Java resolvidas por _DualMethod (contexto instância/classe)
-    e por parâmetros sentinela _MISSING (aridade variável).
 
     Exemplos
     --------
@@ -161,7 +183,7 @@ class JInteger:
     # ------------------------------------------------------------------
     # Formatação por base — métodos estáticos
     # ------------------------------------------------------------------
-
+    @_DualMethod
     def toString(i: int, radix: int = 10) -> str:
         """
         Converte o inteiro i para string no radix especificado.
@@ -182,6 +204,7 @@ class JInteger:
             raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
         return _int_to_str(i, radix)
 
+    @staticmethod
     def toBinaryString(i: int) -> str:
         """
         Retorna representação binária do inteiro como unsigned de 32 bits.
@@ -197,6 +220,7 @@ class JInteger:
         """
         return _uint_to_str(i, 2)
 
+    @staticmethod
     def toHexString(i: int) -> str:
         """
         Retorna representação hexadecimal do inteiro como unsigned de 32 bits.
@@ -212,6 +236,7 @@ class JInteger:
         """
         return _uint_to_str(i, 16)
 
+    @staticmethod
     def toOctalString(i: int) -> str:
         """
         Retorna representação octal do inteiro como unsigned de 32 bits.
@@ -227,6 +252,7 @@ class JInteger:
         """
         return _uint_to_str(i, 8)
 
+    @staticmethod
     def toUnsignedString(i: int, radix: int = 10) -> str:
         """
         Retorna representação em string do inteiro como valor sem sinal de 32 bits.
@@ -318,7 +344,7 @@ class JInteger:
         """
         v = self._value & 0xFFFF
         return v - 65536 if v >= 32768 else v
-    
+
     def intValue(self) -> int:
         """Retorna o valor como int de 32 bits com sinal. Sem perda de informação."""
         return self._value
