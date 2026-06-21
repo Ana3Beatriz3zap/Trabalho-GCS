@@ -48,4 +48,21 @@ class TestConversions:
 
     def test_short_value_wraps(self):
         assert JFloat(32768.0).shortValue() == -32768
+    
+    # --- floatValue / doubleValue ---
 
+    def test_float_value(self):
+        assert JFloat(1.5).floatValue() == 1.5
+
+    def test_double_value(self):
+        assert JFloat(1.5).doubleValue() == 1.5
+
+# ===========================================================================
+# 4. IEEE 754 checks
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestIEEEChecks:
+
+    # --- isNaN (instance) ---
+    def test_is_nan_instance_true(self):
+        assert JFloat(float('nan')).isNaN() is True
