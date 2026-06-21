@@ -1,5 +1,6 @@
 import struct
 import math
+from typing import Union
 
 _UNSET = object()
 
