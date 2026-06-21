@@ -32,4 +32,8 @@ class TestConversions:
     # --- longValue ---
     def test_long_value_positive(self):
         assert JFloat(3.7).longValue() == 3
+    
+    # --- byteValue ---
+    def test_byte_value_small_positive(self):
+        assert JFloat(65.0).byteValue() == 65
 
