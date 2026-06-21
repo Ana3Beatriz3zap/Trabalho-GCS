@@ -64,3 +64,23 @@ class TestObjectContract:
 
     def test_compare_to_less(self):
         assert JFloat(1.0).compareTo(JFloat(2.0)) < 0
+
+
+# ===========================================================================
+# 10. valueOf
+# ===========================================================================
+
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestValueOf:
+    
+    def test_value_of_int(self):
+        obj = JFloat.valueOf(42)
+        assert obj.floatValue() == 42.0
+
+    def test_value_of_string_nan(self):
+        obj = JFloat.valueOf("NaN")
+        assert obj.isNaN()
+    
+    def test_value_of_invalid_type(self):
+        with pytest.raises(TypeError):
+            JFloat.valueOf([1, 2])   # type: ignore[arg-type]
