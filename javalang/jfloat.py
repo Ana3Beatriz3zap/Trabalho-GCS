@@ -232,3 +232,69 @@ class JFloat:
                 f"JFloat() requires float, int, str, or JFloat, "
                 f"not '{type(value).__name__}'"
             )
+        
+
+    # ------------------------------------------------------------------
+    # Static — parsing & value factories
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def parseFloat(s: str) -> float:
+        """
+        Parse a string as a float32 value.
+
+        Java: ``static float parseFloat(String s)``
+
+        Accepted formats:
+
+        * Named literals (case-sensitive): ``"NaN"``, ``"Infinity"``,
+          ``"+Infinity"``, ``"-Infinity"``
+        * Decimal: ``"1.5"``, ``"-3.14"``, ``"1.5e3"``, ``"1.5E-3"``
+        * Hexadecimal float: ``"0x1.8p0"``, ``"0x1.8P-1"``
+        * Leading/trailing whitespace is stripped.
+
+        Args:
+            s: the string to parse.
+
+        Raises:
+            ValueError: if *s* is ``None`` or cannot be parsed
+                        (Java: ``NullPointerException`` / ``NumberFormatException``).
+        """
+        if s is None:
+            raise ValueError(
+                "null input (Java equivalent: NullPointerException)"
+            )
+        s = s.strip()
+        if not s:
+            raise ValueError(
+                "empty string cannot be parsed as float "
+                "(Java equivalent: NumberFormatException)"
+            )
+
+        # Java-specified named literals (exact case, per the Java spec)
+        if s == "NaN":
+            return float('nan')
+        if s in ("Infinity", "+Infinity"):
+            return float('inf')
+        if s == "-Infinity":
+            return float('-inf')
+
+        # Hexadecimal floating-point (Java supports 0x… format in parseFloat)
+        lower = s.lower()
+        if '0x' in lower:
+            try:
+                return _to_float32(float.fromhex(s))
+            except ValueError:
+                raise ValueError(
+                    f"Cannot parse '{s}' as float "
+                    f"(Java equivalent: NumberFormatException)"
+                )
+
+        # Decimal floating-point (Python float() handles all standard forms)
+        try:
+            return _to_float32(float(s))
+        except ValueError:
+            raise ValueError(
+                f"Cannot parse '{s}' as float "
+                f"(Java equivalent: NumberFormatException)"
+            )
