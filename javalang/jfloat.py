@@ -1,5 +1,7 @@
 import struct
 import math
+from typing import Union
+
 
 _UNSET = object()
 
@@ -197,3 +199,54 @@ class JFloat:
     reflection; the built-in ``float`` type is the nearest conceptual
     equivalent, despite being 64-bit rather than 32-bit.
     """
+
+    # ------------------------------------------------------------------
+    # Dual-use methods  (instance call: obj.m()  OR  static call: JFloat.m(v))
+    # ------------------------------------------------------------------
+
+    def isNaN(self_or_v: Union['JFloat', float] = _UNSET) -> bool:  # type: ignore[override]
+        """
+        Return ``True`` if the value is NaN.
+
+        Instance: ``obj.isNaN()``         → checks *obj*'s value
+        Static:   ``JFloat.isNaN(v)``     → checks the float32 *v*
+
+        Java: ``boolean isNaN()`` / ``static boolean isNaN(float v)``
+        """
+        if self_or_v is _UNSET:
+            raise TypeError(
+                "isNaN() requires a JFloat instance or a float argument"
+            )
+        if isinstance(self_or_v, JFloat):
+            return math.isnan(self_or_v._value)
+        return math.isnan(_to_float32(float(self_or_v)))
+
+    def isInfinite(self_or_v: Union['JFloat', float] = _UNSET) -> bool:  # type: ignore[override]
+        """
+        Return ``True`` if the value is ±Infinity.
+
+        Instance: ``obj.isInfinite()``         → checks *obj*'s value
+        Static:   ``JFloat.isInfinite(v)``     → checks the float32 *v*
+
+        Java: ``boolean isInfinite()`` / ``static boolean isInfinite(float v)``
+        """
+        if self_or_v is _UNSET:
+            raise TypeError(
+                "isInfinite() requires a JFloat instance or a float argument"
+            )
+        if isinstance(self_or_v, JFloat):
+            return math.isinf(self_or_v._value)
+        return math.isinf(_to_float32(float(self_or_v)))
+    
+    # ------------------------------------------------------------------
+    # Static-only IEEE 754 check  (no instance equivalent in Java)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def isFinite(v: float) -> bool:
+        """
+        Return ``True`` if *v* is a finite float32 value.
+
+        Java: ``static boolean isFinite(float v)`` *(added in Java 8)*
+        """
+        return math.isfinite(_to_float32(v))
