@@ -70,3 +70,6 @@ class TestRemainderUnsigned:
     def test_dividendo_negativo_interpretado_como_unsigned(self):
         assert JInteger.remainderUnsigned(-1, 2) == 1
  
+class TestParseInt:
+    def test_string_decimal_simples(self):
+        assert JInteger.parseInt("473") == 473
