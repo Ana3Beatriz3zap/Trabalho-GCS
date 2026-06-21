@@ -37,3 +37,20 @@ class TestConversions:
     def test_byte_value_small_positive(self):
         assert JFloat(65.0).byteValue() == 65
 
+# ===========================================================================
+# 12. Edge cases and boundary values
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestEdgeCases:
+    def test_min_value_is_subnormal(self):
+        b = bits(JFloat.MIN_VALUE)
+        assert (b >> 23) & 0xFF == 0       # exponent field == 0
+        assert b & 0x7F_FFFF == 1          # mantissa == 1
+
+    def test_constructor_string_hex_min_value(self):
+        f = JFloat("0x0.000002p-126")
+        assert f.floatValue() == JFloat.MIN_VALUE
+    
+    def test_constructor_string_hex_max_value(self):
+        f = JFloat("0x1.fffffep127")
+        assert f.floatValue() == JFloat.MAX_VALUE
