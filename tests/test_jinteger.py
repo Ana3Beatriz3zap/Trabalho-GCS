@@ -48,3 +48,29 @@ class TestLongValue:
 class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
+
+
+class TestToUnsignedString:
+    def test_valor_positivo_simples(self):
+        assert JInteger.toUnsignedString(5) == '5'
+ 
+    def test_negativo_em_radix_16(self):
+        assert JInteger.toUnsignedString(-1, 16) == 'ffffffff'
+
+
+class TestReverseBytes:
+    def test_valor_simples(self):
+        assert JInteger.reverseBytes(0x12345678) == 0x78563412
+
+    def test_zero_permanece_zero(self):
+        assert JInteger.reverseBytes(0) == 0
+    
+class TestRotateLeft:
+    def test_rotacao_simples(self):
+        assert JInteger.rotateLeft(1, 1) == 2
+ 
+    def test_bit_de_sinal_rotaciona_para_lsb(self):
+        assert JInteger.rotateLeft(JInteger.MIN_VALUE, 1) == 1
+        
+    def test_distancia_multipla_de_32_e_noop(self):
+        assert JInteger.rotateLeft(42, 32) == 42
