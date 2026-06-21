@@ -197,3 +197,37 @@ class JFloat:
     reflection; the built-in ``float`` type is the nearest conceptual
     equivalent, despite being 64-bit rather than 32-bit.
     """
+
+    # ------------------------------------------------------------------
+    # Constructor
+    # ------------------------------------------------------------------
+
+    def __init__(self, value: Union[float, int, str, 'JFloat']) -> None:
+        """
+        Construct a JFloat from a numeric or string value.
+
+        Mirrors Java's three constructors::
+
+            Float(float value)   – pass any Python ``float`` or ``int``
+            Float(double value)  – identical in Python (no distinct double)
+            Float(String s)      – pass a ``str``; parsed via ``parseFloat()``
+
+        Args:
+            value: ``float``, ``int``, ``str``, or another ``JFloat``.
+
+        Raises:
+            TypeError:  if *value* is not a supported type.
+            ValueError: if *value* is a ``str`` that cannot be parsed
+                        (Java equivalent: ``NumberFormatException``).
+        """
+        if isinstance(value, JFloat):
+            self._value: float = value._value
+        elif isinstance(value, str):
+            self._value = JFloat.parseFloat(value)
+        elif isinstance(value, (int, float)):
+            self._value = _to_float32(float(value))
+        else:
+            raise TypeError(
+                f"JFloat() requires float, int, str, or JFloat, "
+                f"not '{type(value).__name__}'"
+            )
