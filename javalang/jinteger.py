@@ -114,6 +114,26 @@ def _int_to_str(i: int, radix: int) -> str:
 def _uint_to_str(i: int, radix: int) -> str:
     """
     Converte um inteiro para string interpretando-o como unsigned de 32 bits.
+        """
+        Converte inteiro sem sinal de 32 bits para string no radix dado.
+        Núcleo compartilhado de toUnsignedString(int) e toUnsignedString(int, int).
+        """
+        radix = _check_radix_silent(radix)
+        u = _to_uint32(i)
+        if u == 0:
+            return '0'
+        digits: list[str] = []
+        while u:
+            digits.append(_DIGITS[u % radix])
+            u //= radix
+        return ''.join(reversed(digits))
+
+# ---------------------------------------------------------------------------
+# Descritor _DualMethod — despacho por contexto (instância vs. classe)
+# ---------------------------------------------------------------------------
+
+
+class _DualMethod:
     """
     radix = _check_radix_silent(radix)
     value = _to_uint32(i)
@@ -353,6 +373,193 @@ class JInteger:
         o valor retornado é o float32 mais próximo, como faria a JVM.
         """
         return struct.unpack('f', struct.pack('f', float(self._value)))[0]
+    
+    @staticmethod
+    def reverseBytes(i: int) -> int:
+        """
+        Inverte a ordem dos 4 bytes, mantendo os bits dentro de cada byte.
+
+        Algoritmo: extração byte a byte e reagrupamento na ordem inversa.
+        Equivale a trocar endianness de um inteiro de 32 bits.
+
+        Equivalente a Integer.reverseBytes(int i).
+
+        Exemplos
+        --------
+        >>> hex(JInteger.reverseBytes(0x12345678))
+        '0x78563412'
+        """
+        n = _to_uint32(i)
+        b0 = (n >> 24) & 0xFF
+        b1 = (n >> 16) & 0xFF
+        b2 = (n >>  8) & 0xFF
+        b3 =  n        & 0xFF
+        return _to_int32((b3 << 24) | (b2 << 16) | (b1 << 8) | b0)
+
+    @staticmethod
+    def rotateLeft(i: int, distance: int) -> int:
+        """
+        Rotaciona os bits de i à esquerda por distance posições.
+
+        Bits que saem pela esquerda reentram pela direita.
+        Apenas os 5 bits menos significativos de distance são usados
+        (módulo 32) — comportamento definido pela especificação Java.
+        Distâncias negativas equivalem a rotateRight.
+
+        Equivalente a Integer.rotateLeft(int i, int distance).
+
+        Exemplos
+        --------
+        >>> JInteger.rotateLeft(1, 1)
+        2
+        >>> JInteger.rotateLeft(-2147483648, 1)    # MIN_VALUE → 1
+        1
+        >>> JInteger.rotateLeft(42, 32)            # noop
+        42
+        """
+        distance &= 0x1F   # módulo 32; trata negativo e > 32 automaticamente
+        if distance == 0:
+            return _to_int32(i)
+        n = _to_uint32(i)
+        return _to_int32(((n << distance) | (n >> (32 - distance))) & _MASK32)
+
+    @staticmethod
+    def rotateRight(i: int, distance: int) -> int:
+        """
+        Rotaciona os bits de i à direita por distance posições.
+
+        Equivalente a Integer.rotateRight(int i, int distance).
+        Implementado como rotateLeft(i, 32 - distance & 0x1F).
+
+        Exemplos
+        --------
+        >>> JInteger.rotateRight(1, 1)
+        -2147483648
+        >>> JInteger.rotateRight(42, 32)           # noop
+        42
+        """
+        return JInteger.rotateLeft(i, -distance)
+    
+    @staticmethod
+    def signum(i: int) -> int:
+        """
+        Retorna o sinal do inteiro: -1, 0 ou +1.
+
+        Equivalente a Integer.signum(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.signum(-100)
+        -1
+        >>> JInteger.signum(0)
+        0
+        >>> JInteger.signum(42)
+        1
+        """
+        i = _to_int32(i)
+        return (i > 0) - (i < 0)
+    def sum(a: int, b: int) -> int:
+        """
+        Soma dois inteiros com comportamento de overflow Java (silencioso).
+
+        MAX_VALUE + 1 == MIN_VALUE, exatamente como em Java.
+
+        Equivalente a Integer.sum(int a, int b).
+
+        Exemplos
+        --------
+        >>> JInteger.sum(2147483647, 1)
+        -2147483648
+        """
+        return _to_int32(a + b)
+
+    @staticmethod
+    def max(a: int, b: int) -> int:
+        """
+        Retorna o maior entre dois inteiros de 32 bits com sinal.
+
+        Equivalente a Integer.max(int a, int b).
+        """
+        return a if _to_int32(a) >= _to_int32(b) else b
+
+    @staticmethod
+    def min(a: int, b: int) -> int:
+        """
+        Retorna o menor entre dois inteiros de 32 bits com sinal.
+
+        Equivalente a Integer.min(int a, int b).
+        """
+        return a if _to_int32(a) <= _to_int32(b) else b
+    
+    @staticmethod
+    def compare(x: int, y: int) -> int:
+        """
+        Compara numericamente dois inteiros de 32 bits com sinal.
+
+        Retorna: 0 se iguais, valor negativo se x < y, positivo se x > y.
+
+        Equivalente a Integer.compare(int x, int y).
+        """
+        x, y = _to_int32(x), _to_int32(y)
+        return (x > y) - (x < y)
+
+    @staticmethod
+    def compareUnsigned(x: int, y: int) -> int:
+        """
+        Compara dois inteiros de 32 bits como valores sem sinal.
+
+        -1 é interpretado como 4294967295 (maior que qualquer valor positivo).
+
+        Equivalente a Integer.compareUnsigned(int x, int y).
+
+        Exemplos
+        --------
+        >>> JInteger.compareUnsigned(-1, 1)    # 0xFFFFFFFF > 1
+        1
+        >>> JInteger.compareUnsigned(-1, -1)
+        0
+        """
+        ux, uy = _to_uint32(x), _to_uint32(y)
+        return (ux > uy) - (ux < uy)
+
+    @staticmethod
+    def divideUnsigned(dividend: int, divisor: int) -> int:
+        """
+        Divisão inteira tratando ambos os operandos como unsigned de 32 bits.
+
+        Equivalente a Integer.divideUnsigned(int dividend, int divisor).
+
+        Exceções
+        --------
+        ZeroDivisionError
+            Se divisor for zero.
+
+        Exemplos
+        --------
+        >>> JInteger.divideUnsigned(-1, 2)    # 4294967295 // 2
+        2147483647
+        """
+        return _to_int32(_to_uint32(dividend) // _to_uint32(divisor))
+
+    
+    @staticmethod
+    def remainderUnsigned(dividend: int, divisor: int) -> int:
+        """
+        Resto da divisão inteira tratando ambos os operandos como unsigned de 32 bits.
+
+        Equivalente a Integer.remainderUnsigned(int dividend, int divisor).
+
+        Exceções
+        --------
+        ZeroDivisionError
+            Se divisor for zero.
+
+        Exemplos
+        --------
+        >>> JInteger.remainderUnsigned(-1, 2)    # 4294967295 % 2
+        1
+        """
+        return _to_int32(_to_uint32(dividend) % _to_uint32(divisor))
 
     # ------------------------------------------------------------------
     # Métodos estáticos — parsing
