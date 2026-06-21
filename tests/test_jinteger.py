@@ -49,6 +49,26 @@ class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
 
+class TestParseUnsignedInt:
+    def test_string_decimal_simples(self):
+        assert JInteger.parseUnsignedInt("ff", 16) == 255
+ 
+    def test_valor_acima_de_max_value_retorna_negativo(self):
+        assert JInteger.parseUnsignedInt("4294967295") == -1
+
+class TestValueOf:
+    def test_valor_a_partir_de_string_com_radix(self):
+        assert JInteger.valueOf("ff", 16).intValue() == 255
+    
+    def test_cache_retorna_mesma_instancia_no_intervalo_128(self):
+        assert JInteger.valueOf(-128) is JInteger.valueOf(-128)
+
+class TestDecode:
+    def test_string_hexadecimal_com_prefixo_0x(self):
+        assert JInteger.decode("0xFF").intValue() == 255
+ 
+    def test_string_octal_negativa(self):
+        assert JInteger.decode("-017").intValue() == -15
 
 class TestSum:
     def test_soma_simples(self):
