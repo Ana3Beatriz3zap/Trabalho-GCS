@@ -440,6 +440,8 @@ class JInteger:
         """
         i = _to_int32(i)
         return (i > 0) - (i < 0)
+    
+    @staticmethod
     def sum(a: int, b: int) -> int:
         """
         Soma dois inteiros com comportamento de overflow Java (silencioso).
