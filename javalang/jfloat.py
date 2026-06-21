@@ -278,6 +278,42 @@ class JFloat:
         if v <= -2_147_483_648.0:
             return -2_147_483_648
         return int(v)  # Python int() truncates toward zero
+    
+    def longValue(self) -> int:
+        """
+        Return this value truncated toward zero and clamped to 64-bit long.
+
+        Java: ``long longValue()``
+
+        Same special-case rules as ``intValue()`` but with 64-bit bounds.
+        """
+        v = self._value
+        if math.isnan(v):
+            return 0
+        if v >= 9_223_372_036_854_775_807.0:
+            return 9_223_372_036_854_775_807
+        if v <= -9_223_372_036_854_775_808.0:
+            return -9_223_372_036_854_775_808
+        return int(v)
+
+    def floatValue(self) -> float:
+        """
+        Return this float32 value as a Python float.
+
+        Java: ``float floatValue()``
+        """
+        return self._value
+
+    def doubleValue(self) -> float:
+        """
+        Return this value widened to a Python float (= Java ``double``).
+
+        Java: ``double doubleValue()``
+
+        No additional precision is gained; the float32 is returned in a
+        64-bit container unchanged.
+        """
+        return float(self._value)
         
 
     # ------------------------------------------------------------------
