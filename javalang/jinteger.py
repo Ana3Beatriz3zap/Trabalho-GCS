@@ -111,6 +111,23 @@ def _int_to_str(i: int, radix: int) -> str:
         i //= radix
     return sign + ''.join(reversed(digits))
 
+def _uint_to_str(i: int, radix: int) -> str:
+    """
+    Converte um inteiro para string interpretando-o como unsigned de 32 bits.
+    """
+    radix = _check_radix_silent(radix)
+    value = _to_uint32(i)
+
+    if value == 0:
+        return "0"
+
+    digits = []
+    while value:
+        digits.append(_DIGITS[value % radix])
+        value //= radix
+
+    return ''.join(reversed(digits))
+
 class JInteger:
     """
     Equivalente Python de java.lang.Integer (Java SE 8).
@@ -145,7 +162,6 @@ class JInteger:
     # Formatação por base — métodos estáticos
     # ------------------------------------------------------------------
 
-    @staticmethod
     def toString(i: int, radix: int = 10) -> str:
         """
         Converte o inteiro i para string no radix especificado.
@@ -166,7 +182,6 @@ class JInteger:
             raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
         return _int_to_str(i, radix)
 
-    @staticmethod
     def toBinaryString(i: int) -> str:
         """
         Retorna representação binária do inteiro como unsigned de 32 bits.
@@ -182,7 +197,6 @@ class JInteger:
         """
         return _uint_to_str(i, 2)
 
-    @staticmethod
     def toHexString(i: int) -> str:
         """
         Retorna representação hexadecimal do inteiro como unsigned de 32 bits.
@@ -198,7 +212,6 @@ class JInteger:
         """
         return _uint_to_str(i, 16)
 
-    @staticmethod
     def toOctalString(i: int) -> str:
         """
         Retorna representação octal do inteiro como unsigned de 32 bits.
@@ -214,7 +227,6 @@ class JInteger:
         """
         return _uint_to_str(i, 8)
 
-    @staticmethod
     def toUnsignedString(i: int, radix: int = 10) -> str:
         """
         Retorna representação em string do inteiro como valor sem sinal de 32 bits.
