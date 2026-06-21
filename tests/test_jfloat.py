@@ -73,3 +73,7 @@ class TestComparison:
     # --- max ---
     def test_max_basic(self):
         assert JFloat.max(1.0, 2.0) == 2.0
+        
+    # --- min ---
+    def test_min_basic(self):
+        assert JFloat.min(1.0, 2.0) == 1.0
