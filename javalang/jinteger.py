@@ -183,27 +183,6 @@ class JInteger:
     # ------------------------------------------------------------------
     # Formatação por base — métodos estáticos
     # ------------------------------------------------------------------
-    @_DualMethod
-    def toString(i: int, radix: int = 10) -> str:
-        """
-        Converte o inteiro i para string no radix especificado.
-
-        Equivalente a Integer.toString(int i) / Integer.toString(int i, int radix).
-        Se radix estiver fora de [2, 36], usa 10 (comportamento Java).
-
-        Exemplos
-        --------
-        >>> JInteger.toString(255, 16)
-        'ff'
-        >>> JInteger.toString(-255, 16)
-        '-ff'
-        >>> JInteger.toString(0)
-        '0'
-        """
-        if not isinstance(i, int) or isinstance(i, bool):
-            raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
-        return _int_to_str(i, radix)
-
     @staticmethod
     def toBinaryString(i: int) -> str:
         """
