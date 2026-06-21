@@ -60,3 +60,13 @@ class TestRotateRight:
 class TestBitCount:
     def test_valor_positivo_simples(self):
         assert JInteger.bitCount(7) == 3
+
+    def test_todos_os_bits_setados(self):
+        assert JInteger.bitCount(-1) == 32
+
+class TestHighestOneBit:
+    def test_valor_positivo_simples(self):
+        assert JInteger.highestOneBit(10) == 8
+ 
+    def test_bit_31_setado_retorna_min_value(self):
+        assert JInteger.highestOneBit(-1) == JInteger.MIN_VALUE
