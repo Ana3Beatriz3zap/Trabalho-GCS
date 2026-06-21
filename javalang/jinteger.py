@@ -179,6 +179,7 @@ class _DualMethod:
 
 _cache: dict[int, 'JInteger'] = {}
 
+
 class JInteger:
     """
     Equivalente Python de java.lang.Integer (Java SE 8).
@@ -389,3 +390,488 @@ class JInteger:
         """
         i = _to_int32(i)
         return (i > 0) - (i < 0)
+    def sum(a: int, b: int) -> int:
+        """
+        Soma dois inteiros com comportamento de overflow Java (silencioso).
+
+        MAX_VALUE + 1 == MIN_VALUE, exatamente como em Java.
+
+        Equivalente a Integer.sum(int a, int b).
+
+        Exemplos
+        --------
+        >>> JInteger.sum(2147483647, 1)
+        -2147483648
+        """
+        return _to_int32(a + b)
+
+    @staticmethod
+    def max(a: int, b: int) -> int:
+        """
+        Retorna o maior entre dois inteiros de 32 bits com sinal.
+
+        Equivalente a Integer.max(int a, int b).
+        """
+        return a if _to_int32(a) >= _to_int32(b) else b
+
+    @staticmethod
+    def min(a: int, b: int) -> int:
+        """
+        Retorna o menor entre dois inteiros de 32 bits com sinal.
+
+        Equivalente a Integer.min(int a, int b).
+        """
+        return a if _to_int32(a) <= _to_int32(b) else b
+    
+    @staticmethod
+    def compare(x: int, y: int) -> int:
+        """
+        Compara numericamente dois inteiros de 32 bits com sinal.
+
+        Retorna: 0 se iguais, valor negativo se x < y, positivo se x > y.
+
+        Equivalente a Integer.compare(int x, int y).
+        """
+        x, y = _to_int32(x), _to_int32(y)
+        return (x > y) - (x < y)
+
+    @staticmethod
+    def compareUnsigned(x: int, y: int) -> int:
+        """
+        Compara dois inteiros de 32 bits como valores sem sinal.
+
+        -1 é interpretado como 4294967295 (maior que qualquer valor positivo).
+
+        Equivalente a Integer.compareUnsigned(int x, int y).
+
+        Exemplos
+        --------
+        >>> JInteger.compareUnsigned(-1, 1)    # 0xFFFFFFFF > 1
+        1
+        >>> JInteger.compareUnsigned(-1, -1)
+        0
+        """
+        ux, uy = _to_uint32(x), _to_uint32(y)
+        return (ux > uy) - (ux < uy)
+
+    @staticmethod
+    def divideUnsigned(dividend: int, divisor: int) -> int:
+        """
+        Divisão inteira tratando ambos os operandos como unsigned de 32 bits.
+
+        Equivalente a Integer.divideUnsigned(int dividend, int divisor).
+
+        Exceções
+        --------
+        ZeroDivisionError
+            Se divisor for zero.
+
+        Exemplos
+        --------
+        >>> JInteger.divideUnsigned(-1, 2)    # 4294967295 // 2
+        2147483647
+        """
+        return _to_int32(_to_uint32(dividend) // _to_uint32(divisor))
+
+    
+    @staticmethod
+    def remainderUnsigned(dividend: int, divisor: int) -> int:
+        """
+        Resto da divisão inteira tratando ambos os operandos como unsigned de 32 bits.
+
+        Equivalente a Integer.remainderUnsigned(int dividend, int divisor).
+
+        Exceções
+        --------
+        ZeroDivisionError
+            Se divisor for zero.
+
+        Exemplos
+        --------
+        >>> JInteger.remainderUnsigned(-1, 2)    # 4294967295 % 2
+        1
+        """
+        return _to_int32(_to_uint32(dividend) % _to_uint32(divisor))
+
+    # ------------------------------------------------------------------
+    # Métodos estáticos — parsing
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def parseInt(s: Optional[str], radix: int = 10) -> int:
+        """
+        Parseia a string como inteiro com sinal no radix dado.
+
+        Equivalente a:
+            Integer.parseInt(String s)           — radix = 10
+            Integer.parseInt(String s, int radix)
+
+        A string pode ter '+' ou '-' como primeiro caractere.
+        Radix deve estar em [2, 36]; fora disso lança NumberFormatException.
+
+        Exceções
+        --------
+        NumberFormatException
+            String nula, vazia, com caracteres inválidos para o radix,
+            radix fora de [2, 36], ou valor fora de [-2147483648, 2147483647].
+
+        Exemplos
+        --------
+        >>> JInteger.parseInt("473")
+        473
+        >>> JInteger.parseInt("-FF", 16)
+        -255
+        >>> JInteger.parseInt("Kona", 27)
+        411787
+        """
+        return _parse_signed_core(s, radix)
+
+    @staticmethod
+    def parseUnsignedInt(s: Optional[str], radix: int = 10) -> int:
+        """
+        Parseia a string como inteiro sem sinal no radix dado.
+
+        Valores entre 2^31 e 2^32-1 (maiores que MAX_VALUE) são retornados
+        como inteiros negativos de 32 bits com sinal — comportamento Java.
+
+        Equivalente a:
+            Integer.parseUnsignedInt(String s)
+            Integer.parseUnsignedInt(String s, int radix)
+
+        Exceções
+        --------
+        NumberFormatException
+            String nula, vazia, com sinal negativo, valor > 4294967295,
+            radix fora de [2, 36], ou caracteres inválidos.
+
+        Exemplos
+        --------
+        >>> JInteger.parseUnsignedInt("4294967295")
+        -1
+        >>> JInteger.parseUnsignedInt("ff", 16)
+        255
+        """
+        if s is None or len(s) == 0:
+            raise NumberFormatException("Argumento nulo ou string vazia")
+        _check_radix_strict(radix)
+
+        idx = 0
+        if s[0] == '+':
+            idx = 1
+        elif s[0] == '-':
+            raise NumberFormatException(
+                f'parseUnsignedInt não aceita sinal negativo: "{s}"'
+            )
+
+        if idx >= len(s):
+            raise NumberFormatException(f'Para string: "{s}"')
+
+        try:
+            value = int(s[idx:], radix)
+        except ValueError:
+            raise NumberFormatException(f'Para string: "{s}"')
+
+        if value < 0 or value > 0xFFFF_FFFF:
+            raise NumberFormatException(
+                f'Valor fora do intervalo unsigned [0, 4294967295]: "{s}"'
+            )
+
+        return _to_int32(value)
+
+    # ------------------------------------------------------------------
+    # valueOf — aridade 1 ou 2, despacho por tipo do primeiro argumento
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def valueOf(value: Union[int, str], radix: int = 10) -> 'JInteger':
+        """
+        Retorna um JInteger representando o valor especificado.
+
+        Equivalente a:
+            Integer.valueOf(int i)
+            Integer.valueOf(String s)         — radix implícito 10
+            Integer.valueOf(String s, int radix)
+
+        Implementa o Integer cache Java: para valores em [-128, 127] retorna
+        sempre o mesmo objeto (identidade garantida por especificação).
+
+        Parâmetros
+        ----------
+        value : int | str
+            int → usado diretamente (truncado para 32 bits).
+            str → parseado com parseInt(value, radix).
+        radix : int
+            Base numérica, usada apenas quando value é str. Default 10.
+
+        Exemplos
+        --------
+        >>> JInteger.valueOf(42).intValue()
+        42
+        >>> JInteger.valueOf("ff", 16).intValue()
+        255
+        >>> JInteger.valueOf(-128) is JInteger.valueOf(-128)
+        True
+        """
+        if isinstance(value, str):
+            parsed = _parse_signed_core(value, radix)
+        elif isinstance(value, int) and not isinstance(value, bool):
+            parsed = _to_int32(value)
+        else:
+            raise TypeError(
+                f"valueOf requer int ou str, recebeu {type(value).__name__}"
+            )
+
+        # Integer cache [-128, 127]
+        if -128 <= parsed <= 127:
+            if parsed not in _cache:
+                obj = object.__new__(JInteger)
+                obj._value = parsed
+                _cache[parsed] = obj
+            return _cache[parsed]
+
+        return JInteger(parsed)
+    
+    # ------------------------------------------------------------------
+    # decode
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def decode(nm: Optional[str]) -> 'JInteger':
+        """
+        Decodifica uma String para JInteger aceitando decimal, hex e octal.
+
+        Formatos aceitos (sinal '+'/'-' opcional antes do prefixo):
+            decimal      → "42", "-42", "+42"
+            hexadecimal  → "0x1F", "0X1F", "#1F"
+            octal        → "017"
+
+        Equivalente a Integer.decode(String nm).
+
+        Exceções
+        --------
+        NumberFormatException
+            nm nulo, vazio, formato inválido, ou valor fora de [-2^31, 2^31-1].
+
+        Exemplos
+        --------
+        >>> JInteger.decode("0xFF").intValue()
+        255
+        >>> JInteger.decode("-017").intValue()
+        -15
+        """
+        if nm is None or len(nm) == 0:
+            raise NumberFormatException("decode: argumento nulo ou string vazia")
+
+        s = nm.strip()
+        if not s:
+            raise NumberFormatException("decode: string em branco")
+
+        negative = False
+        idx = 0
+        if s[0] == '-':
+            negative = True
+            idx = 1
+        elif s[0] == '+':
+            idx = 1
+
+        radix = 10
+        if s[idx:idx + 2].lower() == '0x':
+            radix = 16
+            idx += 2
+        elif s[idx:idx + 1] == '#':
+            radix = 16
+            idx += 1
+        elif s[idx:idx + 1] == '0' and len(s) > idx + 1:
+            radix = 8
+            idx += 1
+
+        digits = s[idx:]
+        if not digits:
+            raise NumberFormatException(f'decode: sem dígitos em "{nm}"')
+
+        try:
+            magnitude = int(digits, radix)
+        except ValueError:
+            raise NumberFormatException(f'decode: "{nm}" não é um inteiro válido')
+
+        value = -magnitude if negative else magnitude
+
+        if value < -(2**31) or value > (2**31 - 1):
+            raise NumberFormatException(f'decode: valor fora do intervalo: "{nm}"')
+
+        return JInteger.valueOf(value)
+    
+    @staticmethod
+    def bitCount(i: int) -> int:
+        """
+        Conta os bits 1 na representação de 32 bits (population count / popcount).
+
+        Algoritmo: Hacker's Delight cap. 5 — soma paralela em pares de bits.
+        Complexidade: O(1) com 5 operações de redução.
+
+        Equivalente a Integer.bitCount(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.bitCount(-1)
+        32
+        >>> JInteger.bitCount(7)
+        3
+        >>> JInteger.bitCount(0)
+        0
+        """
+        n = _to_uint32(i)
+        # Soma pares de bits adjacentes em paralelo
+        n = n - ((n >> 1) & 0x5555_5555)
+        # Soma grupos de 4 bits
+        n = (n & 0x3333_3333) + ((n >> 2) & 0x3333_3333)
+        # Soma grupos de 8 bits; máscara elimina overflow interno
+        n = (n + (n >> 4)) & 0x0F0F_0F0F
+        # Multiplica para acumular nos 8 bits mais altos; shift extrai resultado
+        return ((n * 0x0101_0101) & _MASK32) >> 24
+
+    @staticmethod
+    def highestOneBit(i: int) -> int:
+        """
+        Retorna um valor com apenas o bit 1 mais significativo de i.
+
+        Retorna 0 se i == 0; retorna MIN_VALUE se o bit 31 estiver setado.
+
+        Algoritmo: propaga o bit mais alto progressivamente para baixo via OR,
+        depois isola o topo com (i XOR i>>1) equivalente a (i - i>>1).
+
+        Equivalente a Integer.highestOneBit(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.highestOneBit(10)    # 0b1010 → 0b1000
+        8
+        >>> JInteger.highestOneBit(-1)    # MSB de 0xFFFFFFFF = bit 31
+        -2147483648
+        >>> JInteger.highestOneBit(0)
+        0
+        """
+        n = _to_uint32(i)
+        n |= (n >> 1)
+        n |= (n >> 2)
+        n |= (n >> 4)
+        n |= (n >> 8)
+        n |= (n >> 16)
+        return _to_int32(n - (n >> 1))
+
+    @staticmethod
+    def lowestOneBit(i: int) -> int:
+        """
+        Retorna um valor com apenas o bit 1 menos significativo de i.
+
+        Retorna 0 se i == 0.
+
+        Algoritmo: n & (-n) isola o bit menos significativo em complemento
+        de dois — propriedade fundamental do two's complement.
+
+        Equivalente a Integer.lowestOneBit(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.lowestOneBit(12)    # 0b1100 → 0b0100
+        4
+        >>> JInteger.lowestOneBit(-12)   # same LSB
+        4
+        """
+        u = _to_uint32(i)
+        return _to_int32(u & (-u & _MASK32))
+
+    @staticmethod
+    def numberOfLeadingZeros(i: int) -> int:
+        """
+        Conta zeros à esquerda do bit 1 mais alto na representação de 32 bits.
+
+        Retorna 32 se i == 0.
+
+        Algoritmo: busca binária por halvings (Hacker's Delight §5-3).
+        Em cada passo, testa se os n bits mais altos são todos zero;
+        se sim, descarta a metade inferior e acumula o contador.
+
+        Equivalente a Integer.numberOfLeadingZeros(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.numberOfLeadingZeros(0)
+        32
+        >>> JInteger.numberOfLeadingZeros(1)
+        31
+        >>> JInteger.numberOfLeadingZeros(-1)    # bit 31 setado
+        0
+        """
+        n = _to_uint32(i)
+        if n == 0:
+            return 32
+        count = 0
+        if n <= 0x0000_FFFF: 
+            count += 16; n <<= 16  # noqa: E702
+        if n <= 0x00FF_FFFF: 
+            count += 8;  n <<= 8   # noqa: E702
+        if n <= 0x0FFF_FFFF: 
+            count += 4;  n <<= 4   # noqa: E702
+        if n <= 0x3FFF_FFFF: 
+            count += 2;  n <<= 2   # noqa: E702
+        if n <= 0x7FFF_FFFF: 
+            count += 1              # noqa: E702
+        return count
+
+    @staticmethod
+    def numberOfTrailingZeros(i: int) -> int:
+        """
+        Conta zeros à direita do bit 1 menos significativo na representação de 32 bits.
+
+        Retorna 32 se i == 0.
+
+        Algoritmo: isola o LSB com n & (-n), depois aplica numberOfLeadingZeros
+        e ajusta: NTZ(n) = 31 - NLZ(lowestOneBit(n)).
+
+        Equivalente a Integer.numberOfTrailingZeros(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.numberOfTrailingZeros(0)
+        32
+        >>> JInteger.numberOfTrailingZeros(8)    # 0b1000
+        3
+        >>> JInteger.numberOfTrailingZeros(1)
+        0
+        """
+        n = _to_uint32(i)
+        if n == 0:
+            return 32
+        low = n & (-n & _MASK32)
+        return 31 - JInteger.numberOfLeadingZeros(low)
+
+    @staticmethod
+    def reverse(i: int) -> int:
+        """
+        Inverte a ordem de todos os 32 bits.
+
+        Algoritmo: permutação paralela por trocas de metades sucessivas
+        (Hacker's Delight §7-1). Cinco passos de complexidade O(1):
+          passo 1: troca bits vizinhos (granularidade 1)
+          passo 2: troca pares  (granularidade 2)
+          passo 3: troca nibbles (granularidade 4)
+          passo 4: troca bytes  (granularidade 8)
+          passo 5: troca half-words (granularidade 16)
+
+        Equivalente a Integer.reverse(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.reverse(1)       # 0x00000001 → 0x80000000
+        -2147483648
+        >>> JInteger.reverse(JInteger.reverse(42)) == 42
+        True
+        """
+        n = _to_uint32(i)
+        n = ((n & 0x5555_5555) << 1)  | ((n >> 1)  & 0x5555_5555)
+        n = ((n & 0x3333_3333) << 2)  | ((n >> 2)  & 0x3333_3333)
+        n = ((n & 0x0F0F_0F0F) << 4)  | ((n >> 4)  & 0x0F0F_0F0F)
+        n = ((n & 0x00FF_00FF) << 8)  | ((n >> 8)  & 0x00FF_00FF)
+        n = ((n & 0x0000_FFFF) << 16) | ((n >> 16) & 0x0000_FFFF)
+        return _to_int32(n & _MASK32)
