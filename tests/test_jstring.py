@@ -29,4 +29,26 @@ class TestConstructors:
         """String(String) copia o conteúdo."""
         s = JString("Python")
         assert str(s) == "Python"
+    
+    def test_from_jstring_happy(self):
+        """String(String original) a partir de JString."""
+        original = JString("copy")
+        copy = JString(original)
+        assert copy.equals(original)
+        assert copy is not original
+
+     
+    def test_from_jstring_edge_empty(self):
+        """Cópia de JString vazio."""
+        original = JString()
+        copy = JString(original)
+        assert copy.isEmpty()
+
+    def test_from_char_list_happy(self):
+        """String(char[]) a partir de lista de chars."""
+        chars = ["H", "i", "!"]
+        s = JString(chars)
+        assert str(s) == "Hi!"
+ 
+ 
  
