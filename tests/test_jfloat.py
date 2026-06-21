@@ -55,3 +55,21 @@ class TestBitConversions:
     # --- floatToIntBits ---
     def test_float_to_int_bits_one(self):
         assert JFloat.floatToIntBits(1.0) == 0x3F80_0000
+
+    # --- intBitsToFloat ---
+    def test_int_bits_to_float_one(self):
+        assert JFloat.intBitsToFloat(0x3F80_0000) == 1.0
+
+# ===========================================================================
+# 8. Comparison (compare, max, min, sum)
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestComparison:
+
+    # --- compare ---
+    def test_compare_less(self):
+        assert JFloat.compare(1.0, 2.0) < 0
+
+    # --- max ---
+    def test_max_basic(self):
+        assert JFloat.max(1.0, 2.0) == 2.0
