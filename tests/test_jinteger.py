@@ -6,6 +6,8 @@ Suíte de testes para os métodos de conversão numérica de JInteger:
     - longValue()
     - floatValue()
 """
+import pytest
+
 from javalang.jinteger import JInteger
 
 class TestByteValue:
@@ -48,3 +50,17 @@ class TestLongValue:
 class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
+
+
+@pytest.mark.skip(reason="Ainda não implementado na main")
+class TestDoubleValue:
+    def test_conversao_valor_simples(self):
+        assert JInteger(42).doubleValue() == 42.0
+ 
+    def test_conversao_sem_perda_de_precisao_no_limite_superior(self):
+        assert JInteger(JInteger.MAX_VALUE).doubleValue() == 2147483647.0
+
+@pytest.mark.skip(reason="Ainda não implementado na main")
+class TestEquals:
+    def test_mesmo_valor_retorna_true(self):
+        assert JInteger(5).equals(JInteger(5)) is True
