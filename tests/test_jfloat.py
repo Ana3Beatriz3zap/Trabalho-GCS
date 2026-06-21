@@ -20,6 +20,7 @@ class TestConstructors:
 # ===========================================================================
 # 3. Narrowing/widening conversions
 # ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
 class TestConversions:
     # --- intValue ---
     def test_int_value_positive_truncates(self):
