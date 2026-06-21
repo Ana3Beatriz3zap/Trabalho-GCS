@@ -375,6 +375,130 @@ class JInteger:
         """
         return struct.unpack('f', struct.pack('f', float(self._value)))[0]
     
+    def doubleValue(self) -> float:
+        """
+        Retorna o valor como double IEEE 754 de 64 bits — sem perda de precisão.
+
+        Python float é de 64 bits (double), equivalente direto ao double Java.
+        """
+        return float(self._value)
+    
+    # ------------------------------------------------------------------
+    # Métodos de instância — Object / Comparable
+    # ------------------------------------------------------------------
+
+    def _toString_instance(self) -> str:
+        """
+        Retorna representação decimal com sinal deste JInteger.
+
+        Equivalente a Integer.toString() de instância Java.
+        Chamado via JInteger(x).toString() — sem argumentos.
+        """
+        return _int_to_str(self._value, 10)
+
+    def _hashCode_instance(self) -> int:
+        """
+        Retorna o hash code deste JInteger.
+
+        Em Java, Integer.hashCode() retorna o próprio valor int.
+        Chamado via JInteger(x).hashCode() — sem argumentos.
+        """
+        return self._value
+    
+    def equals(self, obj: object) -> bool:
+        """
+        Compara este objeto com outro pelo valor.
+
+        Retorna True se e somente se obj é um JInteger com o mesmo valor.
+        Equivalente a Integer.equals(Object).
+        """
+        if not isinstance(obj, JInteger):
+            return False
+        return self._value == obj._value
+
+    def compareTo(self, anotherInteger: 'JInteger') -> int:
+        """
+        Compara numericamente este JInteger com outro.
+
+        Retorna: 0 se iguais, negativo se este < outro, positivo se este > outro.
+        Equivalente a Integer.compareTo(Integer).
+        """
+        if not isinstance(anotherInteger, JInteger):
+            raise TypeError("compareTo requer um JInteger")
+        return JInteger.compare(self._value, anotherInteger._value)
+
+    # ------------------------------------------------------------------
+    # toString — descritor _DualMethod
+    #
+    # Java tem DOIS métodos com o mesmo nome:
+    #   instância : String toString()
+    #   estático  : static String toString(int i)
+    #               static String toString(int i, int radix)
+    #
+    # O descritor despacha:
+    #   JInteger(42).toString()        → _toString_instance(self)   → "42"
+    #   JInteger.toString(42)          → _toString_static(42)       → "42"
+    #   JInteger.toString(255, 16)     → _toString_static(255, 16)  → "ff"
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _toString_static(i: int, radix: int = 10) -> str:
+        """
+        Converte o inteiro i para string no radix especificado.
+
+        Equivalente a:
+            Integer.toString(int i)
+            Integer.toString(int i, int radix)
+
+        Se radix estiver fora de [2, 36], usa 10 (comportamento Java).
+
+        Exemplos
+        --------
+        >>> JInteger.toString(255, 16)
+        'ff'
+        >>> JInteger.toString(-255, 16)
+        '-ff'
+        >>> JInteger.toString(0)
+        '0'
+        """
+        if not isinstance(i, int) or isinstance(i, bool):
+            raise TypeError(f"toString requer int, recebeu {type(i).__name__}")
+        return _int_to_str(i, radix)
+
+    toString = _DualMethod(_toString_instance, _toString_static)
+
+    # ------------------------------------------------------------------
+    # hashCode — descritor _DualMethod
+    #
+    # Java SE 8 adicionou uma sobrecarga estática:
+    #   instância : int hashCode()                → retorna this.value
+    #   estático  : static int hashCode(int value) → retorna value
+    #
+    # O descritor despacha:
+    #   JInteger(42).hashCode()    → _hashCode_instance(self)  → 42
+    #   JInteger.hashCode(42)      → _hashCode_static(42)      → 42
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _hashCode_static(value: int) -> int:
+        """
+        Retorna o hash code para o valor int dado.
+
+        Equivalente a Integer.hashCode(int value) — método estático Java 8+.
+        Em Java, hashCode de int é o próprio valor; aqui aplicamos truncamento
+        de 32 bits para consistência.
+
+        Exemplos
+        --------
+        >>> JInteger.hashCode(42)
+        42
+        >>> JInteger.hashCode(-1)
+        -1
+        """
+        return _to_int32(value)
+
+    hashCode = _DualMethod(_hashCode_instance, _hashCode_static)
+    
     @staticmethod
     def reverseBytes(i: int) -> int:
         """
