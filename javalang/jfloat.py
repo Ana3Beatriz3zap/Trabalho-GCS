@@ -304,7 +304,7 @@ class JFloat:
     # Dual-use methods  (instance call: obj.m()  OR  static call: JFloat.m(v))
     # ------------------------------------------------------------------
 
-    def isNaN(self_or_v: Union['JFloat', float] = _UNSET) -> bool:  # type: ignore[override]
+    def isNaN(self_or_v: Union['JFloat', float] = _UNSET) -> bool:  # type: ignore[assignment]
         """
         Return ``True`` if the value is NaN.
 
@@ -321,7 +321,7 @@ class JFloat:
             return math.isnan(self_or_v._value)
         return math.isnan(_to_float32(float(self_or_v)))
 
-    def isInfinite(self_or_v: Union['JFloat', float] = _UNSET) -> bool:  # type: ignore[override]
+    def isInfinite(self_or_v: Union['JFloat', float] = _UNSET) -> bool:  # type: ignore[assignment]
         """
         Return ``True`` if the value is ±Infinity.
 
