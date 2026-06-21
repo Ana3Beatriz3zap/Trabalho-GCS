@@ -37,3 +37,21 @@ class TestConversions:
     def test_byte_value_small_positive(self):
         assert JFloat(65.0).byteValue() == 65
 
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestToHexString:
+
+    def test_one(self):
+        assert JFloat.toHexString(1.0) == "0x1.0p0"
+
+    def test_zero(self):
+        assert JFloat.toHexString(0.0) == "0x0.0p0"
+
+# ===========================================================================
+# 7. Bit-level conversions
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestBitConversions:
+
+    # --- floatToIntBits ---
+    def test_float_to_int_bits_one(self):
+        assert JFloat.floatToIntBits(1.0) == 0x3F80_0000
