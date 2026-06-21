@@ -48,3 +48,15 @@ class TestLongValue:
 class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
+
+class TestRotateRight:
+    def test_rotacao_simples(self):
+        assert JInteger.rotateRight(1, 1) == JInteger.MIN_VALUE
+ 
+    def test_distancia_multipla_de_32_e_noop(self):
+        assert JInteger.rotateRight(42, 32) == 42
+ 
+ 
+class TestBitCount:
+    def test_valor_positivo_simples(self):
+        assert JInteger.bitCount(7) == 3
