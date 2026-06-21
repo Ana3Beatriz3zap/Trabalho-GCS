@@ -1,5 +1,11 @@
+import struct
 import pytest
 from javalang.jfloat import JFloat
+
+
+def bits(v: float) -> int:
+    """Unsigned 32-bit bit-pattern of a float32."""
+    return struct.unpack('>I', struct.pack('>f', v))[0]
 
 # ===========================================================================
 # 2. Constructors
