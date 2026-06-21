@@ -108,6 +108,23 @@ def parseUnsignedInt(s: Optional[str], radix: int = 10) -> int:
 
         return _to_int32(value)
 
+def toBinaryString(i: int) -> str:
+        """
+        Retorna representação binária do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toBinaryString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toBinaryString(-1)
+        '11111111111111111111111111111111'
+        >>> JInteger.toBinaryString(4)
+        '100'
+        """
+        return _uint_to_str(i, 2)
+    
+    
+
 def _parse_signed_core(s: Optional[str], radix: int) -> int:
     """
     Núcleo de parseInt: analisa string como inteiro com sinal no radix dado.
@@ -268,26 +285,6 @@ class JInteger:
         # Esta redeclaração seria sobrescrita — o método real está no _DualMethod.
         # (Mantido aqui apenas para documentação inline; o Python usa a primeira.)
         pass  # pragma: no cover
-
-    @staticmethod
-    def toUnsignedString(i: int, radix: int = 10) -> str:
-        """
-        Retorna representação em string do inteiro como valor sem sinal de 32 bits.
-
-        Equivalente a:
-            Integer.toUnsignedString(int i)
-            Integer.toUnsignedString(int i, int radix)
-
-        Se radix fora de [2, 36], usa 10.
-
-        Exemplos
-        --------
-        >>> JInteger.toUnsignedString(-1)
-        '4294967295'
-        >>> JInteger.toUnsignedString(-1, 16)
-        'ffffffff'
-        """
-        return _uint_to_str(i, radix)
 
     @staticmethod
     def toBinaryString(i: int) -> str:
