@@ -56,7 +56,18 @@ class TestSum:
  
     def test_overflow_estoura_para_min_value(self):
         assert JInteger.sum(JInteger.MAX_VALUE, 1) == JInteger.MIN_VALUE
-        
+
 class TestMax:
     def test_segundo_argumento_maior(self):
         assert JInteger.max(2, 3) == 3
+
+    def test_comparacao_entre_negativos(self):
+        assert JInteger.max(-5, -1) == -1
+
+class TestMin:
+    def test_primeiro_argumento_menor(self):
+        assert JInteger.min(2, 3) == 2
+ 
+    def test_comparacao_entre_negativos(self):
+        assert JInteger.min(-5, -1) == -5
+ 
