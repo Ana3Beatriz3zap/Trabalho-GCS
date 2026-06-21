@@ -77,3 +77,5 @@ class TestToString:
     # --- Special values ---
     def test_zero(self):
         assert JFloat(0.0).toString() == "0.0"
+    def test_neg_zero(self):
+        assert JFloat(-0.0).toString() == "-0.0"
