@@ -6,6 +6,8 @@ Suíte de testes para os métodos de conversão numérica de JInteger:
     - longValue()
     - floatValue()
 """
+import pytest
+
 from javalang.jinteger import JInteger
 
 class TestByteValue:
@@ -48,3 +50,18 @@ class TestLongValue:
 class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
+
+
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestToString:
+    def test_instancia_sem_argumentos(self):
+        assert JInteger(42).toString() == '42'
+ 
+    def test_estatico_com_radix(self):
+        assert JInteger.toString(255, 16) == 'ff'
+ 
+ 
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestHashCode:
+    def test_instancia_sem_argumentos(self):
+        assert JInteger(42).hashCode() == 42
