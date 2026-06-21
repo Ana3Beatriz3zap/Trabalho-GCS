@@ -1,0 +1,85 @@
+"""
+JString — Implementação Python da java.lang.String (Java SE 8)
+ 
+Referência: https://docs.oracle.com/javase/8/docs/api/java/lang/String.html
+ 
+Decisões de Projeto:
+  1. Imutabilidade: JString é imutável — todos os métodos de transformação
+     retornam novas instâncias.
+  2. Armazenamento interno: _value (str Python) + _chars (list[str] de code units).
+  3. char[] Java: representado como list[str] de strings de comprimento 1.
+  4. byte[] Java: representado como bytes ou list[int].
+  5. codePoint: int Python (equivalente ao int de 32 bits Java).
+  6. Nomes camelCase preservados conforme especificação Java.
+  7. None tratado como NullPointerException (ValueError em Python).
+  8. Charset: suporta nomes Java e Python via mapeamento interno.
+  9. intern(): delegado a sys.intern() sobre a str interna.
+  10. format(): suporta placeholders Java (%s, %d, %f, %b, %c, %x, %o) via
+      conversão para sintaxe Python.
+"""
+
+ 
+from __future__ import annotations
+ 
+import re
+import sys
+import unicodedata
+from typing import List, Optional, Union
+
+# ---------------------------------------------------------------------------
+# Mapeamento de charset Java → Python
+# ---------------------------------------------------------------------------
+_CHARSET_MAP: dict[str, str] = {
+    "UTF-8": "utf-8",
+    "UTF-16": "utf-16",
+    "UTF-16BE": "utf-16-be",
+    "UTF-16LE": "utf-16-le",
+    "US-ASCII": "ascii",
+    "ISO-8859-1": "latin-1",
+    "ISO8859-1": "latin-1",
+    "windows-1252": "cp1252",
+}
+ 
+def _resolve_charset(charset: str) -> str:
+    """Resolve nome de charset Java para Python."""
+    return _CHARSET_MAP.get(charset, charset)
+ 
+ 
+def _to_char_list(s: str) -> list[str]:
+    """Converte str Python em lista de code units UTF-16 (simulando char[] Java).
+ 
+    Java usa UTF-16, então pares substitutos ocupam 2 posições.
+    Python usa code points diretamente; aqui preservamos a semântica Java.
+    """
+    result: list[str] = []
+    for ch in s:
+        cp = ord(ch)
+        if cp > 0xFFFF:
+            # Suplementar: codifica como par substituto (surrogate pair)
+            cp -= 0x10000
+            high = 0xD800 | (cp >> 10)
+            low = 0xDC00 | (cp & 0x3FF)
+            result.append(chr(high))
+            result.append(chr(low))
+        else:
+            result.append(ch)
+    return result
+ 
+ 
+def _from_char_list(chars: list[str]) -> str:
+    """Reconstrói str Python a partir de lista de code units UTF-16."""
+    result = []
+    i = 0
+    while i < len(chars):
+        cp = ord(chars[i])
+        if 0xD800 <= cp <= 0xDBFF and i + 1 < len(chars):
+            low = ord(chars[i + 1])
+            if 0xDC00 <= low <= 0xDFFF:
+                full = 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00)
+                result.append(chr(full))
+                i += 2
+                continue
+        result.append(chars[i])
+        i += 1
+    return "".join(result)
+ 
