@@ -5,7 +5,7 @@ Estrutura: 2 testes por método
   - test_*_happy: fluxo feliz
   - test_*_edge:  caso de borda
 """
- 
+# mypy: ignore-errors
 import pytest
 from javalang.jstring import JString
 
@@ -49,7 +49,7 @@ class TestConstructors:
         chars = ["H", "i", "!"]
         s = JString(chars)
         assert str(s) == "Hi!"
-        
+
     def test_from_bytes_happy(self):
         """String(byte[]) decodifica UTF-8 por padrão."""
         b = "hello".encode("utf-8")
