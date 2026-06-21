@@ -61,3 +61,13 @@ class TestToUnsignedString:
 class TestReverseBytes:
     def test_valor_simples(self):
         assert JInteger.reverseBytes(0x12345678) == 0x78563412
+
+    def test_zero_permanece_zero(self):
+        assert JInteger.reverseBytes(0) == 0
+    
+class TestRotateLeft:
+    def test_rotacao_simples(self):
+        assert JInteger.rotateLeft(1, 1) == 2
+ 
+    def test_bit_de_sinal_rotaciona_para_lsb(self):
+        assert JInteger.rotateLeft(JInteger.MIN_VALUE, 1) == 1
