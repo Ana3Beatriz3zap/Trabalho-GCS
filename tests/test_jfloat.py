@@ -66,3 +66,6 @@ class TestIEEEChecks:
     # --- isNaN (instance) ---
     def test_is_nan_instance_true(self):
         assert JFloat(float('nan')).isNaN() is True
+    
+    def test_is_nan_instance_false(self):
+        assert JFloat(1.0).isNaN() is False
