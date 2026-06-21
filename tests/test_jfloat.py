@@ -84,3 +84,12 @@ class TestValueOf:
     def test_value_of_invalid_type(self):
         with pytest.raises(TypeError):
             JFloat.valueOf([1, 2])   # type: ignore[arg-type]
+
+# ===========================================================================
+# 11. Python dunder methods
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestDunderMethods:
+
+    def test_str_delegates_to_to_string(self):
+        assert str(JFloat(1.0)) == "1.0"
