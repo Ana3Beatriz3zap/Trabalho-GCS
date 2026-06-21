@@ -70,4 +70,7 @@ class TestMin:
  
     def test_comparacao_entre_negativos(self):
         assert JInteger.min(-5, -1) == -5
- 
+  
+class TestCompare:
+    def test_x_menor_que_y_retorna_negativo(self):
+        assert JInteger.compare(1, 2) < 0
