@@ -70,3 +70,7 @@ class TestHighestOneBit:
  
     def test_bit_31_setado_retorna_min_value(self):
         assert JInteger.highestOneBit(-1) == JInteger.MIN_VALUE
+
+class TestLowestOneBit:
+    def test_valor_positivo_simples(self):
+        assert JInteger.lowestOneBit(12) == 4
