@@ -234,7 +234,114 @@ class JFloat:
                 f"not '{type(value).__name__}'"
             )
         
+    # ------------------------------------------------------------------
+    # Narrowing / widening conversions  (instance)
+    # ------------------------------------------------------------------
 
+    def byteValue(self) -> int:
+        """
+        Return this value narrowed to a signed 8-bit integer (-128 … 127).
+
+        Java: ``byte byteValue()``
+
+        Equivalent to Java's ``(byte)(int) value`` cast chain: truncate to
+        ``int`` first, then take the low 8 bits with sign extension.
+        """
+        n = self.intValue() & 0xFF
+        return n - 0x100 if n >= 0x80 else n
+
+    def shortValue(self) -> int:
+        """
+        Return this value narrowed to a signed 16-bit integer (-32768 … 32767).
+
+        Java: ``short shortValue()``
+        """
+        n = self.intValue() & 0xFFFF
+        return n - 0x1_0000 if n >= 0x8000 else n
+
+    def intValue(self) -> int:
+        """
+        Return this value truncated toward zero and clamped to 32-bit int.
+
+        Java: ``int intValue()``
+
+        Special cases (JLS §5.1.3 narrowing float → int):
+
+        * NaN           → 0
+        * +Infinity / positive overflow → ``Integer.MAX_VALUE`` (2 147 483 647)
+        * -Infinity / negative overflow → ``Integer.MIN_VALUE`` (-2 147 483 648)
+        """
+        v = self._value
+        if math.isnan(v):
+            return 0
+        if v >= 2_147_483_647.0:
+            return 2_147_483_647
+        if v <= -2_147_483_648.0:
+            return -2_147_483_648
+        return int(v)  # Python int() truncates toward zero
+    
+    def longValue(self) -> int:
+        """
+        Return this value truncated toward zero and clamped to 64-bit long.
+
+        Java: ``long longValue()``
+
+        Same special-case rules as ``intValue()`` but with 64-bit bounds.
+        """
+        v = self._value
+        if math.isnan(v):
+            return 0
+        if v >= 9_223_372_036_854_775_807.0:
+            return 9_223_372_036_854_775_807
+        if v <= -9_223_372_036_854_775_808.0:
+            return -9_223_372_036_854_775_808
+        return int(v)
+
+    def floatValue(self) -> float:
+        """
+        Return this float32 value as a Python float.
+
+        Java: ``float floatValue()``
+        """
+        return self._value
+
+    def doubleValue(self) -> float:
+        """
+        Return this value widened to a Python float (= Java ``double``).
+
+        Java: ``double doubleValue()``
+
+        No additional precision is gained; the float32 is returned in a
+        64-bit container unchanged.
+        """
+        return float(self._value)
+        
+    # Dual-use methods  (instance call: obj.m()  OR  static call: JFloat.m(v))
+    # ------------------------------------------------------------------
+
+    def toString(self_or_f: Union['JFloat', float] = _UNSET) -> str:  # type: ignore[assignment]
+        """
+        Return a Java-style string for this value or for the given float.
+
+        Instance: ``obj.toString()``         → string for *obj*'s value
+        Static:   ``JFloat.toString(f)``     → string for the float32 *f*
+
+        Java: ``String toString()`` / ``static String toString(float f)``
+
+        Examples::
+
+            JFloat(1.0).toString()   → "1.0"
+            JFloat.toString(0.1)     → "0.1"
+            JFloat.toString(1e8)     → "1.0E8"
+        """
+        if self_or_f is _UNSET:
+            raise TypeError(
+                "toString() requires a JFloat instance or a float argument"
+            )
+        if isinstance(self_or_f, JFloat):
+            return _java_float_str(self_or_f._value)
+        return _java_float_str(_to_float32(float(self_or_f)))
+    
     # ------------------------------------------------------------------
     # Static — parsing & value factories
     # ------------------------------------------------------------------
@@ -350,3 +457,230 @@ class JFloat:
         Java: ``static boolean isFinite(float v)`` *(added in Java 8)*
         """
         return math.isfinite(_to_float32(v))
+    @staticmethod
+    def valueOf(value: Union[float, int, str]) -> 'JFloat':
+        """
+        Return a JFloat wrapping the given value.
+
+        Java: ``static Float valueOf(float f)``
+              ``static Float valueOf(String s)``
+
+        Python unifies both Java overloads via runtime type dispatch.
+
+        Args:
+            value: a ``float``, ``int``, or ``str``.
+
+        Raises:
+            TypeError:  for unsupported types.
+            ValueError: for unparseable strings.
+        """
+        if isinstance(value, str):
+            return JFloat(JFloat.parseFloat(value))
+        if isinstance(value, (int, float)):
+            return JFloat(float(value))
+        raise TypeError(
+            f"valueOf() requires float, int, or str, "
+            f"not '{type(value).__name__}'"
+        )
+
+    # ------------------------------------------------------------------
+    # Static — hexadecimal string
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def toHexString(f: float) -> str:
+        """
+        Return the hexadecimal string representation of the float32 value.
+
+        Java: ``static String toHexString(float f)``
+
+        Format::
+
+            [-]0x{lead}.{mantissa_hex}p{exponent}
+
+        where:
+
+        * *lead* is ``'1'`` for normalized values, ``'0'`` for subnormals/zero.
+        * *mantissa_hex* is the hex fraction (trailing zeros stripped,
+          at least one digit retained).
+        * *exponent* is the signed decimal unbiased binary exponent (no
+          leading zeros, no ``+`` sign for positive values).
+
+        Examples::
+
+            toHexString(1.0)            → "0x1.0p0"
+            toHexString(1.5)            → "0x1.8p0"
+            toHexString(0.5)            → "0x1.0p-1"
+            toHexString(-0.0)           → "-0x0.0p0"
+            toHexString(Float.MAX_VALUE)→ "0x1.fffffep127"
+            toHexString(Float.MIN_VALUE)→ "0x0.000002p-126"
+            toHexString(Float.NaN)      → "NaN"
+        """
+        f32 = _to_float32(f)
+
+        if math.isnan(f32):
+            return "NaN"
+        if math.isinf(f32):
+            return "Infinity" if f32 > 0 else "-Infinity"
+
+        raw = _float32_raw_bits(f32)
+        sign_bit = (raw >> 31) & 1
+        exp_bits = (raw >> 23) & 0xFF
+        mantissa = raw & 0x007F_FFFF
+        sign_str = "-" if sign_bit else ""
+
+        # ±0.0
+        if exp_bits == 0 and mantissa == 0:
+            return sign_str + "0x0.0p0"
+
+        # Subnormal (exp field == 0, mantissa != 0)
+        if exp_bits == 0:
+            exp_val = -126   # always MIN_EXPONENT for subnormals
+            lead = "0"
+        else:
+            exp_val = exp_bits - 127
+            lead = "1"
+
+        # Build hex mantissa.
+        # The 23-bit mantissa must be represented as 6 hex digits (24 bits).
+        # Shift left by 1 so that bit 22 (the MSB) aligns with the top nibble,
+        # giving the same layout Java uses.
+        #
+        # Example — 1.5f:  mantissa = 0x400000
+        #   shifted = 0x800000  →  hex = "800000"  →  stripped = "8"
+        #   result  "0x1.8p0"   ✓
+        mantissa_shifted = mantissa << 1            # 24 significant bits
+        hex_str = f"{mantissa_shifted:06x}"
+        hex_frac = hex_str.rstrip('0') or '0'      # at least one digit
+
+        return f"{sign_str}0x{lead}.{hex_frac}p{exp_val}"
+
+    
+        # ------------------------------------------------------------------
+    
+    # ------------------------------------------------------------------
+    # Static — bit-level conversions
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def floatToIntBits(value: float) -> int:
+        """
+        Return the IEEE 754 bit representation as a **signed** 32-bit integer.
+
+        Java: ``static int floatToIntBits(float value)``
+
+        If *value* is any NaN, returns ``0x7fc00000`` (canonical quiet NaN),
+        regardless of the original NaN bit pattern.  This normalisation
+        ensures that all NaN values share the same bit representation and
+        therefore the same hash code.
+        """
+        if math.isnan(value):
+            return 0x7fc0_0000   # canonical quiet NaN (positive signed int)
+        raw = _float32_raw_bits(_to_float32(value))
+        return _to_signed32(raw)
+
+    @staticmethod
+    def floatToRawIntBits(value: float) -> int:
+        """
+        Return the raw IEEE 754 bit representation as a **signed** 32-bit int,
+        preserving NaN bit patterns without canonicalisation.
+
+        Java: ``static int floatToRawIntBits(float value)``
+
+        Limitation: Python's ``float`` exposes a single NaN bit pattern.
+        When any NaN is packed into a 32-bit struct field, the result is
+        implementation-defined (typically ``0x7fc00000``).  Therefore, this
+        method and ``floatToIntBits()`` produce the same result in practice.
+        See the README for details.
+        """
+        raw = _float32_raw_bits(_to_float32(value))
+        return _to_signed32(raw)
+
+    @staticmethod
+    def intBitsToFloat(bits: int) -> float:
+        """
+        Return the float32 whose IEEE 754 bit pattern equals *bits*.
+
+        Java: ``static float intBitsToFloat(int bits)``
+
+        Only the low 32 bits of *bits* are used (consistent with Java's
+        ``int`` being 32-bit).
+        """
+        return _bits_to_float32(bits & 0xFFFF_FFFF)
+
+    # ------------------------------------------------------------------
+    # Static — total-order comparison and arithmetic
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def compare(f1: float, f2: float) -> int:
+        """
+        Compare two float32 values using IEEE 754 total ordering.
+
+        Java: ``static int compare(float f1, float f2)``
+
+        Total order: −0.0 < +0.0; NaN is greater than all other values.
+
+        Algorithm:
+            Transform each value's ``floatToIntBits`` via ``_float_compare_key``
+            (XOR the lower 31 bits for negative bit-patterns) to obtain a
+            monotone integer representation, then compare ordinarily.
+
+        Returns:
+            -1 if f1 < f2, 0 if equal, 1 if f1 > f2 (in total ordering).
+        """
+        k1 = _float_compare_key(JFloat.floatToIntBits(f1))
+        k2 = _float_compare_key(JFloat.floatToIntBits(f2))
+        if k1 < k2:
+            return -1
+        if k1 == k2:
+            return 0
+        return 1
+
+    @staticmethod
+    def max(a: float, b: float) -> float:
+        """
+        Return the greater of two float32 values.
+
+        Java: ``static float max(float a, float b)``
+
+        * If either argument is NaN, returns NaN.
+        * +0.0 is considered greater than -0.0.
+        """
+        a32, b32 = _to_float32(a), _to_float32(b)
+        if math.isnan(a32) or math.isnan(b32):
+            return float('nan')
+        if a32 == b32:
+            # Distinguish ±0.0: positive wins
+            return a32 if math.copysign(1.0, a32) > 0 else b32
+        return a32 if a32 > b32 else b32
+
+    @staticmethod
+    def min(a: float, b: float) -> float:
+        """
+        Return the lesser of two float32 values.
+
+        Java: ``static float min(float a, float b)``
+
+        * If either argument is NaN, returns NaN.
+        * -0.0 is considered less than +0.0.
+        """
+        a32, b32 = _to_float32(a), _to_float32(b)
+        if math.isnan(a32) or math.isnan(b32):
+            return float('nan')
+        if a32 == b32:
+            # Distinguish ±0.0: negative wins
+            return a32 if math.copysign(1.0, a32) < 0 else b32
+        return a32 if a32 < b32 else b32
+
+    @staticmethod
+    def sum(a: float, b: float) -> float:
+        """
+        Return the float32 sum of *a* and *b*.
+
+        Java: ``static float sum(float a, float b)`` *(added in Java 8)*
+
+        Both arguments are rounded to float32 precision before addition;
+        the result is also rounded to float32.
+        """
+        return _to_float32(_to_float32(a) + _to_float32(b))
