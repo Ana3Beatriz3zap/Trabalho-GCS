@@ -10,6 +10,17 @@ class TestTransformation:
         s = JString("Hello World")
         assert str(s.substring(6)) == "World"
 
+    def test_subSequence_happy(self):
+        """subSequence equivale a substring(begin, end)."""
+        s = JString("Hello")
+        assert str(s.subSequence(1, 4)) == "ell"
+
+    def test_concat_happy(self):
+        """concat junta duas strings."""
+        a = JString("Hello, ")
+        b = JString("World!")
+        assert str(a.concat(b)) == "Hello, World!"
+
 # ===========================================================================
 # Expressões Regulares
 # ===========================================================================
@@ -19,6 +30,11 @@ class TestRegex:
         """matches retorna True quando string casa completamente com regex."""
         s = JString("12345")
         assert s.matches(r"\d+") is True
+
+    def test_replaceFirst_happy(self):
+        """replaceFirst substitui apenas a primeira ocorrência."""
+        s = JString("aaa")
+        assert str(s.replaceFirst("a", "b")) == "baa"
 
 # ===========================================================================
 # Métodos Estáticos
