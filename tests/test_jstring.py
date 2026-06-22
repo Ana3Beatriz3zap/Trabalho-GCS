@@ -1,5 +1,5 @@
 import pytest
-from jstring import JString, _java_int, _to_char_list
+from javalang.jstring import JString
  
 
 # ===========================================================================
