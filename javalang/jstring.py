@@ -250,6 +250,31 @@ class JString:
         """Encodes a string para bytes usando o charset fornecido (padrão: UTF-8)."""
         cs = _resolve_charset(charset) if charset else "utf-8"
         return self._value.encode(cs)
+    
+    # ------------------------------------------------------------------
+    # Transformação
+    # ------------------------------------------------------------------
+
+    def substring(self, beginIndex: int, endIndex: Optional[int] = None) -> "JString":
+        """substring(int beginIndex) / substring(int beginIndex, int endIndex)."""
+        n = len(self._chars)
+        end = n if endIndex is None else endIndex
+        _validate_range(beginIndex, end, n)
+        result = JString.__new__(JString)
+        result._chars = self._chars[beginIndex:end]
+        return result
+
+    def subSequence(self, beginIndex: int, endIndex: int) -> "JString":
+        """Retorna subsequência como JString (implementa CharSequence)."""
+        return self.substring(beginIndex, endIndex)
+
+    def concat(self, other: "JString") -> "JString":
+        """Concatena other ao final de this."""
+        _validate_not_none(other, "str")
+        other_chars = other._chars if isinstance(other, JString) else _to_char_list(other)
+        result = JString.__new__(JString)
+        result._chars = self._chars + other_chars
+        return result
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
