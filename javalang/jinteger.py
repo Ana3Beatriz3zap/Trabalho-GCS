@@ -549,6 +549,20 @@ class JInteger:
         return _to_int32(value)
 
     hashCode = _DualMethod(_hashCode_instance, _hashCode_static)
+
+    # ------------------------------------------------------------------
+    # Dunder helpers Python — facilitam uso idiomático sem alterar a API Java
+    # ------------------------------------------------------------------
+
+    def __repr__(self) -> str:
+        return f"JInteger({self._value})"
+
+    def __str__(self) -> str:
+        # Chama o método de instância através do descritor
+        return self.toString()
+
+    def __eq__(self, other: object) -> bool:
+        return self.equals(other)
     
     @staticmethod
     def reverseBytes(i: int) -> int:
