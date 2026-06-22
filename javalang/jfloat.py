@@ -475,3 +475,80 @@ class JFloat:
         ``int`` being 32-bit).
         """
         return _bits_to_float32(bits & 0xFFFF_FFFF)
+
+    # ------------------------------------------------------------------
+    # Static — total-order comparison and arithmetic
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def compare(f1: float, f2: float) -> int:
+        """
+        Compare two float32 values using IEEE 754 total ordering.
+
+        Java: ``static int compare(float f1, float f2)``
+
+        Total order: −0.0 < +0.0; NaN is greater than all other values.
+
+        Algorithm:
+            Transform each value's ``floatToIntBits`` via ``_float_compare_key``
+            (XOR the lower 31 bits for negative bit-patterns) to obtain a
+            monotone integer representation, then compare ordinarily.
+
+        Returns:
+            -1 if f1 < f2, 0 if equal, 1 if f1 > f2 (in total ordering).
+        """
+        k1 = _float_compare_key(JFloat.floatToIntBits(f1))
+        k2 = _float_compare_key(JFloat.floatToIntBits(f2))
+        if k1 < k2:
+            return -1
+        if k1 == k2:
+            return 0
+        return 1
+
+    @staticmethod
+    def max(a: float, b: float) -> float:
+        """
+        Return the greater of two float32 values.
+
+        Java: ``static float max(float a, float b)``
+
+        * If either argument is NaN, returns NaN.
+        * +0.0 is considered greater than -0.0.
+        """
+        a32, b32 = _to_float32(a), _to_float32(b)
+        if math.isnan(a32) or math.isnan(b32):
+            return float('nan')
+        if a32 == b32:
+            # Distinguish ±0.0: positive wins
+            return a32 if math.copysign(1.0, a32) > 0 else b32
+        return a32 if a32 > b32 else b32
+
+    @staticmethod
+    def min(a: float, b: float) -> float:
+        """
+        Return the lesser of two float32 values.
+
+        Java: ``static float min(float a, float b)``
+
+        * If either argument is NaN, returns NaN.
+        * -0.0 is considered less than +0.0.
+        """
+        a32, b32 = _to_float32(a), _to_float32(b)
+        if math.isnan(a32) or math.isnan(b32):
+            return float('nan')
+        if a32 == b32:
+            # Distinguish ±0.0: negative wins
+            return a32 if math.copysign(1.0, a32) < 0 else b32
+        return a32 if a32 < b32 else b32
+
+    @staticmethod
+    def sum(a: float, b: float) -> float:
+        """
+        Return the float32 sum of *a* and *b*.
+
+        Java: ``static float sum(float a, float b)`` *(added in Java 8)*
+
+        Both arguments are rounded to float32 precision before addition;
+        the result is also rounded to float32.
+        """
+        return _to_float32(_to_float32(a) + _to_float32(b))
