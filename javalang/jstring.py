@@ -424,6 +424,15 @@ class JString:
             return this_sub.casefold() == other_sub.casefold()
         return this_sub == other_sub
 
+    def hashCode(self) -> int:
+        """Calcula hash exatamente como Java: s[0]*31^(n-1) + ... + s[n-1].
+
+        Aplica overflow de inteiro de 32 bits com complemento de dois.
+        """
+        h = 0
+        for ch in self._chars:
+            h = _java_int(31 * h + ord(ch))
+        return h
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
