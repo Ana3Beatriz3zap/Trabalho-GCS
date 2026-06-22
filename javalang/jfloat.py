@@ -342,3 +342,81 @@ class JFloat:
         if isinstance(self_or_v, JFloat):
             return JFloat.floatToIntBits(self_or_v._value)
         return JFloat.floatToIntBits(_to_float32(float(self_or_v)))
+
+
+    # ------------------------------------------------------------------
+    # Object-contract methods  (instance-only)
+    # ------------------------------------------------------------------
+
+    def equals(self, other: object) -> bool:
+        """
+        Compare this JFloat with *other* for value equality.
+
+        Java: ``boolean equals(Object obj)``
+
+        Equality is defined via ``floatToIntBits``:
+
+        * ``NaN.equals(NaN)``      → ``True``  (unlike primitive ``==``)
+        * ``(+0.0).equals(-0.0)``  → ``False`` (unlike primitive ``==``)
+        """
+        if not isinstance(other, JFloat):
+            return False
+        return (JFloat.floatToIntBits(self._value)
+                == JFloat.floatToIntBits(other._value))
+
+    def compareTo(self, other: 'JFloat') -> int:
+        """
+        Compare this JFloat with *other* using IEEE 754 total ordering.
+
+        Java: ``int compareTo(Float anotherFloat)``
+
+        Total order: -0.0 < +0.0; NaN is greater than all other values.
+
+        Returns:
+            Negative if ``self < other``, 0 if equal, positive if ``self > other``.
+
+        Raises:
+            TypeError: if *other* is not a JFloat.
+        """
+        if not isinstance(other, JFloat):
+            raise TypeError(
+                f"compareTo() requires a JFloat, not '{type(other).__name__}'"
+            )
+        return JFloat.compare(self._value, other._value)
+
+
+    # ------------------------------------------------------------------
+    # Python dunder methods
+    # ------------------------------------------------------------------
+
+    def __repr__(self) -> str:
+        return f"JFloat({self._value!r})"
+
+    def __str__(self) -> str:
+        return _java_float_str(self._value)
+
+    def __eq__(self, other: object) -> bool:
+        """Delegates to ``equals()``: NaN == NaN, +0.0 != -0.0."""
+        return self.equals(other)
+
+    def __hash__(self) -> int:
+        """Delegates to ``hashCode()`` for consistency with ``equals()``."""
+        return JFloat.floatToIntBits(self._value)
+
+    def __lt__(self, other: 'JFloat') -> bool:
+        return self.compareTo(other) < 0
+
+    def __le__(self, other: 'JFloat') -> bool:
+        return self.compareTo(other) <= 0
+
+    def __gt__(self, other: 'JFloat') -> bool:
+        return self.compareTo(other) > 0
+
+    def __ge__(self, other: 'JFloat') -> bool:
+        return self.compareTo(other) >= 0
+
+    def __float__(self) -> float:
+        return self._value
+
+    def __int__(self) -> int:
+        return self.intValue()
