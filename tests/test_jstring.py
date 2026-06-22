@@ -30,9 +30,16 @@ class TestAccessAndSize:
         """codePointCount de string BMP conta 1:1."""
         s = JString("hello")
         assert s.codePointCount(0, 5) == 5
-        
+
     def test_offsetByCodePoints_happy(self):
         """offsetByCodePoints avança N code points."""
         s = JString("abcde")
         assert s.offsetByCodePoints(0, 3) == 3
+
+    def test_getChars_happy(self):
+        """getChars copia intervalo para dst."""
+        s = JString("Hello")
+        dst = [" "] * 5
+        s.getChars(1, 4, dst, 0)
+        assert dst[:3] == ["e", "l", "l"]
 
