@@ -540,3 +540,15 @@ class JFloat:
             # Distinguish ±0.0: negative wins
             return a32 if math.copysign(1.0, a32) < 0 else b32
         return a32 if a32 < b32 else b32
+
+    @staticmethod
+    def sum(a: float, b: float) -> float:
+        """
+        Return the float32 sum of *a* and *b*.
+
+        Java: ``static float sum(float a, float b)`` *(added in Java 8)*
+
+        Both arguments are rounded to float32 precision before addition;
+        the result is also rounded to float32.
+        """
+        return _to_float32(_to_float32(a) + _to_float32(b))
