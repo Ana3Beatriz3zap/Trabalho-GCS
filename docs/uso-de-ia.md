@@ -12,10 +12,10 @@ A equipe permanece responsável por compreender integralmente os artefatos produ
 
 ## Ferramentas Utilizadas
 
-| Ferramenta            | Finalidade                                                                   |
-| --------------------- | ---------------------------------------------------------------------------- |
-| ChatGPT               | Explicações técnicas, geração de exemplos, auxílio em implementação e testes |
-| Outras                | Descrever finalidade                                                         |
+| Ferramenta | Finalidade |
+|------------|------------|
+| ChatGPT | Explicações técnicas, geração de exemplos, auxílio em implementação, documentação, testes, criação de issues e elaboração de Pull Requests |
+| Claude | Apoio na implementação das classes `JInteger`, `JFloat` e `JString`, geração de testes unitários, explicação de comportamentos da API Java, sugestões de código, refatoração e validação de casos de teste |
 
 ---
 
@@ -56,59 +56,68 @@ A IA foi utilizada para gerar uma estrutura inicial padronizada para a descriç�
 * Ajustes para contemplar os requisitos de rastreabilidade entre issues, commits e pull requests.
 * Inclusão de checklist de conformidade com os padrões do projeto.
 
-
 ---
-
 
 ## Registro IA-002
 
-**Responsável:** Nome do aluno
+**Responsável:** Desenvolvedoras
 
-**Data:** DD-MM-AAAA
+**Data:** Durante o desenvolvimento das classes JavaLang
 
-**Issue:** #XX
+**Issue:** Diversas issues relacionadas à implementação das classes `JInteger`, `JFloat` e `JString`
 
-**Classe/Módulo:** JString
+**Classe/Módulo:** JInteger, JFloat e JString
 
 **Método(s):**
 
-* substring(int)
-* substring(int, int)
+* Diversos métodos das classes `JInteger`
+* Diversos métodos das classes `JFloat`
+* Diversos métodos das classes `JString`
 
 **Tipo de auxílio:**
 
-* [ ] Implementação
-* [ ] Testes
+* [x] Implementação
+* [x] Testes
 * [ ] Documentação
-* [ ] Refatoração
-* [ ] Explicação técnica
+* [x] Refatoração
+* [x] Explicação técnica
 
 ### Prompt representativo
 
-> Inserir aqui um prompt representativo utilizado durante a interação com a IA.
+> Implemente em Python o método equivalente ao método da API Java da classe correspondente, preservando o comportamento da biblioteca padrão do Java. Gere também testes unitários cobrindo casos de sucesso, casos de borda e cenários de exceção. Considere compatibilidade com os testes existentes do projeto e aderência ao estilo já utilizado nas demais classes. Explique as decisões adotadas e apresente exemplos de uso.
 
 ### Resultado utilizado
 
-Descrever resumidamente como a resposta da IA foi utilizada.
+A ferramenta Claude foi utilizada como apoio na implementação de métodos das classes `JInteger`, `JFloat` e `JString`, bem como na geração de testes unitários associados. A ferramenta forneceu sugestões de código, explicações sobre o comportamento da API Java original, tratamento de exceções, casos especiais e cenários de teste.
+
+As respostas serviram como ponto de partida para a implementação dos métodos e para a elaboração dos testes automatizados, auxiliando na compreensão do comportamento esperado das classes equivalentes à biblioteca `java.lang`.
 
 ### Adaptações realizadas pela equipe
 
-* Descrever ajustes realizados.
-* Descrever validações executadas.
-* Descrever modificações efetuadas após revisão humana.
+* Revisão integral de todo código sugerido pela IA.
+* Revisão e validação de todos os testes gerados.
+* Adequação das implementações à arquitetura do projeto.
+* Ajustes para compatibilidade com os testes automatizados existentes.
+* Inclusão de casos de teste adicionais identificados durante a revisão manual.
+* Correção de inconsistências identificadas durante a validação manual.
+* Padronização do estilo de código conforme as convenções adotadas pela equipe.
+* Implementação de melhorias adicionais não contempladas nas sugestões originais.
+* Verificação da equivalência comportamental com a documentação oficial da API Java.
 
 ### Arquivos afetados
 
-* javalang/arquivo.py
-* tests/test_arquivo.py
+* `javalang/jinteger.py`
+* `javalang/jfloat.py`
+* `javalang/jstring.py`
+* `tests/test_jinteger.py`
+* `tests/test_jfloat.py`
+* `tests/test_jstring.py`
 
 ---
 
 ## Resumo Consolidado
 
-| ID     | Responsável | Classe/Módulo | Métodos   | Tipo de Uso          |
-| ------ | ----------- | ------------- | --------- | -------------------- |
+| ID | Responsável | Classe/Módulo | Métodos | Tipo de Uso |
+|-----|-------------|---------------|----------|-------------|
 | IA-001 | Ana Beatriz | Processo de GCS / Configuração do Repositório | N/A | Documentação |
-| IA-002 | Nome        | JString       | substring | Explicação Técnica   |
-
----
+| IA-002 | Desenvolvedoras | JInteger, JFloat e JString | Diversos métodos | Implementação, Testes, Refatoração e Explicação Técnica |
