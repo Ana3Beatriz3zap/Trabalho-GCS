@@ -279,14 +279,6 @@ class JInteger:
     # Formatação por base — métodos estáticos
     # ------------------------------------------------------------------
     @staticmethod
-    def _toString_static(i: int, radix: int = 10) -> str:
-        # Declarado novamente para legibilidade; o binding no descritor acima
-        # captura a versão definida antes de toString = _DualMethod(...).
-        # Esta redeclaração seria sobrescrita — o método real está no _DualMethod.
-        # (Mantido aqui apenas para documentação inline; o Python usa a primeira.)
-        pass  # pragma: no cover
-
-    @staticmethod
     def toBinaryString(i: int) -> str:
         """
         Retorna representação binária do inteiro como unsigned de 32 bits.
