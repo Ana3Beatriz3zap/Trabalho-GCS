@@ -51,6 +51,30 @@ class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
 
+class TestCompareUnsigned:
+    def test_menos_um_e_maior_que_qualquer_positivo_como_unsigned(self):
+        assert JInteger.compareUnsigned(-1, 1) > 0
+ 
+    def test_valores_iguais_retorna_zero(self):
+        assert JInteger.compareUnsigned(-1, -1) == 0
+
+class TestDivideUnsigned:
+    def test_divisao_simples(self):
+        assert JInteger.divideUnsigned(10, 3) == 3
+    
+    def test_dividendo_negativo_interpretado_como_unsigned(self):
+        assert JInteger.divideUnsigned(-1, 2) == JInteger.MAX_VALUE
+ 
+class TestRemainderUnsigned:
+    def test_resto_simples(self):
+        assert JInteger.remainderUnsigned(10, 3) == 1
+ 
+    def test_dividendo_negativo_interpretado_como_unsigned(self):
+        assert JInteger.remainderUnsigned(-1, 2) == 1
+ 
+class TestParseInt:
+    def test_string_decimal_simples(self):
+        assert JInteger.parseInt("473") == 473
     def test_conversao_valor_negativo(self):
         assert JInteger(-42).floatValue() == -42.0
 
