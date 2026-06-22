@@ -233,7 +233,33 @@ class JFloat:
                 f"not '{type(value).__name__}'"
             )
         
+    # ------------------------------------------------------------------
+    # Dual-use methods  (instance call: obj.m()  OR  static call: JFloat.m(v))
+    # ------------------------------------------------------------------
 
+    def toString(self_or_f: Union['JFloat', float] = _UNSET) -> str:  # type: ignore[assignment]
+        """
+        Return a Java-style string for this value or for the given float.
+
+        Instance: ``obj.toString()``         → string for *obj*'s value
+        Static:   ``JFloat.toString(f)``     → string for the float32 *f*
+
+        Java: ``String toString()`` / ``static String toString(float f)``
+
+        Examples::
+
+            JFloat(1.0).toString()   → "1.0"
+            JFloat.toString(0.1)     → "0.1"
+            JFloat.toString(1e8)     → "1.0E8"
+        """
+        if self_or_f is _UNSET:
+            raise TypeError(
+                "toString() requires a JFloat instance or a float argument"
+            )
+        if isinstance(self_or_f, JFloat):
+            return _java_float_str(self_or_f._value)
+        return _java_float_str(_to_float32(float(self_or_f)))
+    
     # ------------------------------------------------------------------
     # Static — parsing & value factories
     # ------------------------------------------------------------------
@@ -298,3 +324,103 @@ class JFloat:
                 f"Cannot parse '{s}' as float "
                 f"(Java equivalent: NumberFormatException)"
             )
+
+    @staticmethod
+    def valueOf(value: Union[float, int, str]) -> 'JFloat':
+        """
+        Return a JFloat wrapping the given value.
+
+        Java: ``static Float valueOf(float f)``
+              ``static Float valueOf(String s)``
+
+        Python unifies both Java overloads via runtime type dispatch.
+
+        Args:
+            value: a ``float``, ``int``, or ``str``.
+
+        Raises:
+            TypeError:  for unsupported types.
+            ValueError: for unparseable strings.
+        """
+        if isinstance(value, str):
+            return JFloat(JFloat.parseFloat(value))
+        if isinstance(value, (int, float)):
+            return JFloat(float(value))
+        raise TypeError(
+            f"valueOf() requires float, int, or str, "
+            f"not '{type(value).__name__}'"
+        )
+
+    # ------------------------------------------------------------------
+    # Static — hexadecimal string
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def toHexString(f: float) -> str:
+        """
+        Return the hexadecimal string representation of the float32 value.
+
+        Java: ``static String toHexString(float f)``
+
+        Format::
+
+            [-]0x{lead}.{mantissa_hex}p{exponent}
+
+        where:
+
+        * *lead* is ``'1'`` for normalized values, ``'0'`` for subnormals/zero.
+        * *mantissa_hex* is the hex fraction (trailing zeros stripped,
+          at least one digit retained).
+        * *exponent* is the signed decimal unbiased binary exponent (no
+          leading zeros, no ``+`` sign for positive values).
+
+        Examples::
+
+            toHexString(1.0)            → "0x1.0p0"
+            toHexString(1.5)            → "0x1.8p0"
+            toHexString(0.5)            → "0x1.0p-1"
+            toHexString(-0.0)           → "-0x0.0p0"
+            toHexString(Float.MAX_VALUE)→ "0x1.fffffep127"
+            toHexString(Float.MIN_VALUE)→ "0x0.000002p-126"
+            toHexString(Float.NaN)      → "NaN"
+        """
+        f32 = _to_float32(f)
+
+        if math.isnan(f32):
+            return "NaN"
+        if math.isinf(f32):
+            return "Infinity" if f32 > 0 else "-Infinity"
+
+        raw = _float32_raw_bits(f32)
+        sign_bit = (raw >> 31) & 1
+        exp_bits = (raw >> 23) & 0xFF
+        mantissa = raw & 0x007F_FFFF
+        sign_str = "-" if sign_bit else ""
+
+        # ±0.0
+        if exp_bits == 0 and mantissa == 0:
+            return sign_str + "0x0.0p0"
+
+        # Subnormal (exp field == 0, mantissa != 0)
+        if exp_bits == 0:
+            exp_val = -126   # always MIN_EXPONENT for subnormals
+            lead = "0"
+        else:
+            exp_val = exp_bits - 127
+            lead = "1"
+
+        # Build hex mantissa.
+        # The 23-bit mantissa must be represented as 6 hex digits (24 bits).
+        # Shift left by 1 so that bit 22 (the MSB) aligns with the top nibble,
+        # giving the same layout Java uses.
+        #
+        # Example — 1.5f:  mantissa = 0x400000
+        #   shifted = 0x800000  →  hex = "800000"  →  stripped = "8"
+        #   result  "0x1.8p0"   ✓
+        mantissa_shifted = mantissa << 1            # 24 significant bits
+        hex_str = f"{mantissa_shifted:06x}"
+        hex_frac = hex_str.rstrip('0') or '0'      # at least one digit
+
+        return f"{sign_str}0x{lead}.{hex_frac}p{exp_val}"
+
+    
