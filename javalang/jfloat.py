@@ -315,6 +315,47 @@ class JFloat:
         """
         return float(self._value)
         
+    # ------------------------------------------------------------------
+    # Object-contract methods  (instance-only)
+    # ------------------------------------------------------------------
+
+    def equals(self, other: object) -> bool:
+        """
+        Compare this JFloat with *other* for value equality.
+
+        Java: ``boolean equals(Object obj)``
+
+        Equality is defined via ``floatToIntBits``:
+
+        * ``NaN.equals(NaN)``      → ``True``  (unlike primitive ``==``)
+        * ``(+0.0).equals(-0.0)``  → ``False`` (unlike primitive ``==``)
+        """
+        if not isinstance(other, JFloat):
+            return False
+        return (JFloat.floatToIntBits(self._value)
+                == JFloat.floatToIntBits(other._value))
+
+    def compareTo(self, other: 'JFloat') -> int: 
+        """
+        Compare this JFloat with *other* using IEEE 754 total ordering.
+
+        Java: ``int compareTo(Float anotherFloat)``
+
+        Total order: -0.0 < +0.0; NaN is greater than all other values.
+
+        Returns:
+            Negative if ``self < other``, 0 if equal, positive if ``self > other``.
+
+        Raises:
+            TypeError: if *other* is not a JFloat.
+        """
+        if not isinstance(other, JFloat):
+            raise TypeError(
+                f"compareTo() requires a JFloat, not '{type(other).__name__}'"
+            )
+        return JFloat.compare(self._value, other._value)
+
+    # ------------------------------------------------------------------
     # Dual-use methods  (instance call: obj.m()  OR  static call: JFloat.m(v))
     # ------------------------------------------------------------------
 
@@ -340,6 +381,23 @@ class JFloat:
         if isinstance(self_or_f, JFloat):
             return _java_float_str(self_or_f._value)
         return _java_float_str(_to_float32(float(self_or_f)))
+    
+    def hashCode(self_or_v: Union['JFloat', float] = _UNSET) -> int:  # type: ignore[assignment]
+        """
+        Return the hash code (= ``floatToIntBits(value)``).
+
+        Instance: ``obj.hashCode()``          → hash for *obj*'s value
+        Static:   ``JFloat.hashCode(v)``      → hash for the float32 *v*
+
+        Java: ``int hashCode()`` / ``static int hashCode(float value)``
+        """
+        if self_or_v is _UNSET:
+            raise TypeError(
+                "hashCode() requires a JFloat instance or a float argument"
+            )
+        if isinstance(self_or_v, JFloat):
+            return JFloat.floatToIntBits(self_or_v._value)
+        return JFloat.floatToIntBits(_to_float32(float(self_or_v)))
     
     # ------------------------------------------------------------------
     # Static — parsing & value factories
