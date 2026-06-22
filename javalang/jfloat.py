@@ -234,6 +234,87 @@ class JFloat:
             )
         
     # ------------------------------------------------------------------
+    # Narrowing / widening conversions  (instance)
+    # ------------------------------------------------------------------
+
+    def byteValue(self) -> int:
+        """
+        Return this value narrowed to a signed 8-bit integer (-128 … 127).
+
+        Java: ``byte byteValue()``
+
+        Equivalent to Java's ``(byte)(int) value`` cast chain: truncate to
+        ``int`` first, then take the low 8 bits with sign extension.
+        """
+        n = self.intValue() & 0xFF
+        return n - 0x100 if n >= 0x80 else n
+
+    def shortValue(self) -> int:
+        """
+        Return this value narrowed to a signed 16-bit integer (-32768 … 32767).
+
+        Java: ``short shortValue()``
+        """
+        n = self.intValue() & 0xFFFF
+        return n - 0x1_0000 if n >= 0x8000 else n
+
+    def intValue(self) -> int:
+        """
+        Return this value truncated toward zero and clamped to 32-bit int.
+
+        Java: ``int intValue()``
+
+        Special cases (JLS §5.1.3 narrowing float → int):
+
+        * NaN           → 0
+        * +Infinity / positive overflow → ``Integer.MAX_VALUE`` (2 147 483 647)
+        * -Infinity / negative overflow → ``Integer.MIN_VALUE`` (-2 147 483 648)
+        """
+        v = self._value
+        if math.isnan(v):
+            return 0
+        if v >= 2_147_483_647.0:
+            return 2_147_483_647
+        if v <= -2_147_483_648.0:
+            return -2_147_483_648
+        return int(v)  # Python int() truncates toward zero
+    
+    def longValue(self) -> int:
+        """
+        Return this value truncated toward zero and clamped to 64-bit long.
+
+        Java: ``long longValue()``
+
+        Same special-case rules as ``intValue()`` but with 64-bit bounds.
+        """
+        v = self._value
+        if math.isnan(v):
+            return 0
+        if v >= 9_223_372_036_854_775_807.0:
+            return 9_223_372_036_854_775_807
+        if v <= -9_223_372_036_854_775_808.0:
+            return -9_223_372_036_854_775_808
+        return int(v)
+
+    def floatValue(self) -> float:
+        """
+        Return this float32 value as a Python float.
+
+        Java: ``float floatValue()``
+        """
+        return self._value
+
+    def doubleValue(self) -> float:
+        """
+        Return this value widened to a Python float (= Java ``double``).
+
+        Java: ``double doubleValue()``
+
+        No additional precision is gained; the float32 is returned in a
+        64-bit container unchanged.
+        """
+        return float(self._value)
+        
     # Dual-use methods  (instance call: obj.m()  OR  static call: JFloat.m(v))
     # ------------------------------------------------------------------
 
