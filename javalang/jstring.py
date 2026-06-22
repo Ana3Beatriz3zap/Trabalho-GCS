@@ -410,6 +410,50 @@ class JString:
         if m > len(self._chars):
             return False
         return self._chars[-m:] == p
+    # Transformação
+    # ------------------------------------------------------------------
+
+    def substring(self, beginIndex: int, endIndex: Optional[int] = None) -> "JString":
+        """substring(int beginIndex) / substring(int beginIndex, int endIndex)."""
+        n = len(self._chars)
+        end = n if endIndex is None else endIndex
+        _validate_range(beginIndex, end, n)
+        result = JString.__new__(JString)
+        result._chars = self._chars[beginIndex:end]
+        return result
+
+    def subSequence(self, beginIndex: int, endIndex: int) -> "JString":
+        """Retorna subsequência como JString (implementa CharSequence)."""
+        return self.substring(beginIndex, endIndex)
+
+    def concat(self, other: "JString") -> "JString":
+        """Concatena other ao final de this."""
+        _validate_not_none(other, "str")
+        other_chars = other._chars if isinstance(other, JString) else _to_char_list(other)
+        result = JString.__new__(JString)
+        result._chars = self._chars + other_chars
+        return result
+    
+    def replace(
+        self,
+        old: Union[str, "JString"],
+        new: Union[str, "JString"],
+    ) -> "JString":
+        """replace(char oldChar, char newChar) / replace(CharSequence, CharSequence)."""
+        _validate_not_none(old, "target")
+        _validate_not_none(new, "replacement")
+        old_v = old._value if isinstance(old, JString) else old
+        new_v = new._value if isinstance(new, JString) else new
+        return JString(self._value.replace(old_v, new_v))
+
+    def toLowerCase(self) -> "JString":
+        """Converte para minúsculas usando regras Unicode."""
+        return JString(self._value.lower())
+
+    def toUpperCase(self) -> "JString":
+        """Converte para maiúsculas usando regras Unicode."""
+        return JString(self._value.upper())
+
     def trim(self) -> "JString":
         """Remove whitespace ASCII (\\u0001–\\u0020) do início e fim (como Java)."""
         v = self._value
