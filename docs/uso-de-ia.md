@@ -14,8 +14,8 @@ A equipe permanece responsável por compreender integralmente os artefatos produ
 
 | Ferramenta | Finalidade |
 |------------|------------|
-| ChatGPT | Explicações técnicas, geração de exemplos, auxílio em implementação, documentação, testes, criação de issues e elaboração de Pull Requests |
-| Claude | Apoio na implementação das classes `JInteger`, `JFloat` e `JString`, geração de testes unitários, explicação de comportamentos da API Java, sugestões de código, refatoração e validação de casos de teste |
+| ChatGPT | Explicações técnicas, documentação, elaboração de relatórios, geração de testes, criação de issues, revisão de código, auxílio na análise de compatibilidade entre Java e Python e apoio à implementação das classes do projeto |
+| Claude | Análise da especificação Java SE 8, apoio à implementação das classes `JInteger`, `JFloat` e `JString`, geração de testes unitários, identificação de casos de borda, documentação de incompatibilidades, sugestões de refatoração e validação da aderência à API Java |
 
 ---
 
@@ -70,9 +70,9 @@ A IA foi utilizada para gerar uma estrutura inicial padronizada para a descriç�
 
 **Método(s):**
 
-* Diversos métodos das classes `JInteger`
-* Diversos métodos das classes `JFloat`
-* Diversos métodos das classes `JString`
+* Métodos de conversão, parsing, comparação e operações bit a bit da classe `JInteger`
+* Métodos de conversão, parsing, operações IEEE 754 e comparação da classe `JFloat`
+* Métodos de manipulação e comparação de strings da classe `JString`
 
 **Tipo de auxílio:**
 
@@ -84,25 +84,52 @@ A IA foi utilizada para gerar uma estrutura inicial padronizada para a descriç�
 
 ### Prompt representativo
 
-> Implemente em Python o método equivalente ao método da API Java da classe correspondente, preservando o comportamento da biblioteca padrão do Java. Gere também testes unitários cobrindo casos de sucesso, casos de borda e cenários de exceção. Considere compatibilidade com os testes existentes do projeto e aderência ao estilo já utilizado nas demais classes. Explique as decisões adotadas e apresente exemplos de uso.
+> Você é um arquiteto de software sênior especialista em Java SE 8, Python 3.12+, design de APIs, compatibilidade entre linguagens e engenharia de software.
+>
+> Sua missão é implementar uma biblioteca Python que replique, da forma mais fiel possível, o contrato público das classes da API Java SE 8, com base exclusivamente na documentação oficial da Oracle.
+>
+> A implementação deve preservar a semântica da API Java sempre que tecnicamente possível dentro das limitações da linguagem Python.
+>
+> O prompt especificou requisitos detalhados de:
+>
+> * fidelidade à API Java;
+> * preservação da nomenclatura camelCase;
+> * tratamento de diferenças entre Java e Python;
+> * controle de overflow e representação binária;
+> * robustez para casos extremos e entradas inválidas;
+> * documentação de incompatibilidades;
+> * geração de testes unitários com pytest;
+> * análise prévia das decisões de projeto;
+> * avaliação de compatibilidade dos métodos implementados.
+>
+> O mesmo modelo de prompt foi adaptado para cada classe implementada (`JInteger`, `JFloat` e `JString`), substituindo apenas a especificação da API correspondente.
 
 ### Resultado utilizado
 
-A ferramenta Claude foi utilizada como apoio na implementação de métodos das classes `JInteger`, `JFloat` e `JString`, bem como na geração de testes unitários associados. A ferramenta forneceu sugestões de código, explicações sobre o comportamento da API Java original, tratamento de exceções, casos especiais e cenários de teste.
+As ferramentas de IA foram utilizadas como apoio técnico para:
 
-As respostas serviram como ponto de partida para a implementação dos métodos e para a elaboração dos testes automatizados, auxiliando na compreensão do comportamento esperado das classes equivalentes à biblioteca `java.lang`.
+* análise das diferenças entre as APIs Java e Python;
+* identificação dos métodos previstos pela especificação oficial;
+* geração de sugestões de implementação;
+* explicação do comportamento esperado dos métodos da API Java;
+* geração de testes unitários;
+* identificação de casos de borda;
+* documentação de adaptações necessárias devido às diferenças entre as linguagens;
+* elaboração de análises de compatibilidade entre a implementação Python e a especificação Java.
+
+As respostas produzidas serviram como material de apoio para estudo, validação de decisões de projeto e implementação dos métodos das classes desenvolvidas.
 
 ### Adaptações realizadas pela equipe
 
-* Revisão integral de todo código sugerido pela IA.
-* Revisão e validação de todos os testes gerados.
-* Adequação das implementações à arquitetura do projeto.
-* Ajustes para compatibilidade com os testes automatizados existentes.
-* Inclusão de casos de teste adicionais identificados durante a revisão manual.
-* Correção de inconsistências identificadas durante a validação manual.
-* Padronização do estilo de código conforme as convenções adotadas pela equipe.
-* Implementação de melhorias adicionais não contempladas nas sugestões originais.
-* Verificação da equivalência comportamental com a documentação oficial da API Java.
+* Leitura e análise da documentação oficial da Oracle para validação das respostas geradas.
+* Revisão integral de todo código sugerido pelas ferramentas de IA.
+* Correção de inconsistências identificadas durante testes e revisão manual.
+* Adequação das implementações à arquitetura definida pela equipe.
+* Ajustes de compatibilidade com os testes automatizados do projeto.
+* Criação de testes adicionais não contemplados pelas sugestões iniciais.
+* Refatoração de código para melhorar legibilidade, manutenibilidade e aderência ao padrão do projeto.
+* Validação dos comportamentos em casos extremos, incluindo overflow, operações binárias e tratamento de exceções.
+* Documentação das adaptações necessárias devido às diferenças entre Java e Python.
 
 ### Arquivos afetados
 
