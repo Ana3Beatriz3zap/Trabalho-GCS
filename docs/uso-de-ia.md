@@ -12,10 +12,10 @@ A equipe permanece responsável por compreender integralmente os artefatos produ
 
 ## Ferramentas Utilizadas
 
-| Ferramenta            | Finalidade                                                                   |
-| --------------------- | ---------------------------------------------------------------------------- |
-| ChatGPT               | Explicações técnicas, geração de exemplos, auxílio em implementação e testes |
-| Outras                | Descrever finalidade                                                         |
+| Ferramenta | Finalidade |
+|------------|------------|
+| ChatGPT | Explicações técnicas, documentação, elaboração de relatórios, geração de testes, criação de issues, revisão de código, auxílio na análise de compatibilidade entre Java e Python e apoio à implementação das classes do projeto |
+| Claude | Análise da especificação Java SE 8, apoio à implementação das classes `JInteger`, `JFloat` e `JString`, geração de testes unitários, identificação de casos de borda, documentação de incompatibilidades, sugestões de refatoração e validação da aderência à API Java |
 
 ---
 
@@ -56,59 +56,96 @@ A IA foi utilizada para gerar uma estrutura inicial padronizada para a descriç�
 * Ajustes para contemplar os requisitos de rastreabilidade entre issues, commits e pull requests.
 * Inclusão de checklist de conformidade com os padrões do projeto.
 
-
 ---
-
 
 ## Registro IA-002
 
-**Responsável:** Nome do aluno
+**Responsável:** Desenvolvedoras
 
-**Data:** DD-MM-AAAA
+**Data:** Durante o desenvolvimento das classes JavaLang
 
-**Issue:** #XX
+**Issue:** Diversas issues relacionadas à implementação das classes `JInteger`, `JFloat` e `JString`
 
-**Classe/Módulo:** JString
+**Classe/Módulo:** JInteger, JFloat e JString
 
 **Método(s):**
 
-* substring(int)
-* substring(int, int)
+* Métodos de conversão, parsing, comparação e operações bit a bit da classe `JInteger`
+* Métodos de conversão, parsing, operações IEEE 754 e comparação da classe `JFloat`
+* Métodos de manipulação e comparação de strings da classe `JString`
 
 **Tipo de auxílio:**
 
-* [ ] Implementação
-* [ ] Testes
-* [ ] Documentação
-* [ ] Refatoração
-* [ ] Explicação técnica
+* [x] Implementação
+* [x] Testes
+* [x] Documentação
+* [x] Refatoração
+* [x] Explicação técnica
 
 ### Prompt representativo
 
-> Inserir aqui um prompt representativo utilizado durante a interação com a IA.
+> Você é um arquiteto de software sênior especialista em Java SE 8, Python 3.12+, design de APIs, compatibilidade entre linguagens e engenharia de software.
+>
+> Sua missão é implementar uma biblioteca Python que replique, da forma mais fiel possível, o contrato público das classes da API Java SE 8, com base exclusivamente na documentação oficial da Oracle.
+>
+> A implementação deve preservar a semântica da API Java sempre que tecnicamente possível dentro das limitações da linguagem Python.
+>
+> O prompt especificou requisitos detalhados de:
+>
+> * fidelidade à API Java;
+> * preservação da nomenclatura camelCase;
+> * tratamento de diferenças entre Java e Python;
+> * controle de overflow e representação binária;
+> * robustez para casos extremos e entradas inválidas;
+> * documentação de incompatibilidades;
+> * geração de testes unitários com pytest;
+> * análise prévia das decisões de projeto;
+> * avaliação de compatibilidade dos métodos implementados.
+>
+> O mesmo modelo de prompt foi adaptado para cada classe implementada (`JInteger`, `JFloat` e `JString`), substituindo apenas a especificação da API correspondente.
 
 ### Resultado utilizado
 
-Descrever resumidamente como a resposta da IA foi utilizada.
+As ferramentas de IA foram utilizadas como apoio técnico para:
+
+* análise das diferenças entre as APIs Java e Python;
+* identificação dos métodos previstos pela especificação oficial;
+* geração de sugestões de implementação;
+* explicação do comportamento esperado dos métodos da API Java;
+* geração de testes unitários;
+* identificação de casos de borda;
+* documentação de adaptações necessárias devido às diferenças entre as linguagens;
+* elaboração de análises de compatibilidade entre a implementação Python e a especificação Java.
+
+As respostas produzidas serviram como material de apoio para estudo, validação de decisões de projeto e implementação dos métodos das classes desenvolvidas.
 
 ### Adaptações realizadas pela equipe
 
-* Descrever ajustes realizados.
-* Descrever validações executadas.
-* Descrever modificações efetuadas após revisão humana.
+* Leitura e análise da documentação oficial da Oracle para validação das respostas geradas.
+* Revisão integral de todo código sugerido pelas ferramentas de IA.
+* Correção de inconsistências identificadas durante testes e revisão manual.
+* Adequação das implementações à arquitetura definida pela equipe.
+* Ajustes de compatibilidade com os testes automatizados do projeto.
+* Criação de testes adicionais não contemplados pelas sugestões iniciais.
+* Refatoração de código para melhorar legibilidade, manutenibilidade e aderência ao padrão do projeto.
+* Validação dos comportamentos em casos extremos, incluindo overflow, operações binárias e tratamento de exceções.
+* Documentação das adaptações necessárias devido às diferenças entre Java e Python.
 
 ### Arquivos afetados
 
-* javalang/arquivo.py
-* tests/test_arquivo.py
+* `javalang/jinteger.py`
+* `javalang/jfloat.py`
+* `javalang/jstring.py`
+* `tests/test_jinteger.py`
+* `tests/test_jfloat.py`
+* `tests/test_jstring.py`
+* Documentação das classes e relatórios de compatibilidade
 
 ---
 
 ## Resumo Consolidado
 
-| ID     | Responsável | Classe/Módulo | Métodos   | Tipo de Uso          |
-| ------ | ----------- | ------------- | --------- | -------------------- |
+| ID | Responsável | Classe/Módulo | Métodos | Tipo de Uso |
+|-----|-------------|---------------|----------|-------------|
 | IA-001 | Ana Beatriz | Processo de GCS / Configuração do Repositório | N/A | Documentação |
-| IA-002 | Nome        | JString       | substring | Explicação Técnica   |
-
----
+| IA-002 | Desenvolvedoras | JInteger, JFloat e JString | Diversos métodos | Implementação, Testes, Documentação, Refatoração e Explicação Técnica |
