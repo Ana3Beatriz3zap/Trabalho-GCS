@@ -575,6 +575,9 @@ class JInteger:
     def __int__(self) -> int:
         return self._value
     
+    def __float__(self) -> float:
+        return self.doubleValue()
+    
     @staticmethod
     def reverseBytes(i: int) -> int:
         """
