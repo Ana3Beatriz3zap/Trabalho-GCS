@@ -21,3 +21,18 @@ class TestAccessAndSize:
         s = JString("A")
         assert s.codePointAt(0) == 65
 
+    def test_codePointBefore_happy(self):
+        """codePointBefore(1) retorna code point do primeiro char."""
+        s = JString("Z")
+        assert s.codePointBefore(1) == 90  # ord('Z')
+
+    def test_codePointCount_happy(self):
+        """codePointCount de string BMP conta 1:1."""
+        s = JString("hello")
+        assert s.codePointCount(0, 5) == 5
+        
+    def test_offsetByCodePoints_happy(self):
+        """offsetByCodePoints avança N code points."""
+        s = JString("abcde")
+        assert s.offsetByCodePoints(0, 3) == 3
+
