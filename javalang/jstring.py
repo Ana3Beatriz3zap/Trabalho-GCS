@@ -275,6 +275,27 @@ class JString:
         result = JString.__new__(JString)
         result._chars = self._chars + other_chars
         return result
+    
+    def replace(
+        self,
+        old: Union[str, "JString"],
+        new: Union[str, "JString"],
+    ) -> "JString":
+        """replace(char oldChar, char newChar) / replace(CharSequence, CharSequence)."""
+        _validate_not_none(old, "target")
+        _validate_not_none(new, "replacement")
+        old_v = old._value if isinstance(old, JString) else old
+        new_v = new._value if isinstance(new, JString) else new
+        return JString(self._value.replace(old_v, new_v))
+
+    def toLowerCase(self) -> "JString":
+        """Converte para minúsculas usando regras Unicode."""
+        return JString(self._value.lower())
+
+    def toUpperCase(self) -> "JString":
+        """Converte para maiúsculas usando regras Unicode."""
+        return JString(self._value.upper())
+
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
