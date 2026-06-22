@@ -250,6 +250,27 @@ class JString:
         """Encodes a string para bytes usando o charset fornecido (padrão: UTF-8)."""
         cs = _resolve_charset(charset) if charset else "utf-8"
         return self._value.encode(cs)
+    
+    # ------------------------------------------------------------------
+    # Expressões Regulares
+    # ------------------------------------------------------------------
+
+    def matches(self, regex: str) -> bool:
+        """Retorna True se a string inteira casar com o regex."""
+        _validate_not_none(regex, "regex")
+        return bool(re.fullmatch(regex, self._value))
+
+    def replaceFirst(self, regex: str, replacement: str) -> "JString":
+        """Substitui primeira ocorrência do regex."""
+        _validate_not_none(regex, "regex")
+        _validate_not_none(replacement, "replacement")
+        return JString(re.sub(regex, _java_replacement(replacement), self._value, count=1))
+
+    def replaceAll(self, regex: str, replacement: str) -> "JString":
+        """Substitui todas as ocorrências do regex."""
+        _validate_not_none(regex, "regex")
+        _validate_not_none(replacement, "replacement")
+        return JString(re.sub(regex, _java_replacement(replacement), self._value))
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
