@@ -244,3 +244,8 @@ class JString:
             )
         for i in range(count):
             dst[dstBegin + i] = self._chars[srcBegin + i]
+    
+    def getBytes(self, charset: Optional[str] = None) -> bytes:
+        """Encodes a string para bytes usando o charset fornecido (padrão: UTF-8)."""
+        cs = _resolve_charset(charset) if charset else "utf-8"
+        return self._value.encode(cs)
