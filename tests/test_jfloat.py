@@ -54,6 +54,62 @@ class TestConversions:
     def test_float_value(self):
         assert JFloat(1.5).floatValue() == 1.5
 
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestComparison:
+    # --- sum ---
+    def test_sum_basic(self):
+        assert JFloat.sum(1.0, 2.0) == 3.0
+
+# ===========================================================================
+# 9. equals, hashCode, compareTo
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestObjectContract:
+    # --- equals ---
+
+    def test_equals_same_value(self):
+        assert JFloat(1.0).equals(JFloat(1.0))
+
+    # --- hashCode ---
+
+    def test_hash_code_equals_float_to_int_bits(self):
+        f = JFloat(1.5)
+        assert f.hashCode() == JFloat.floatToIntBits(1.5)
+
+
+    # --- compareTo ---
+
+    def test_compare_to_less(self):
+        assert JFloat(1.0).compareTo(JFloat(2.0)) < 0
+
+
+# ===========================================================================
+# 10. valueOf
+# ===========================================================================
+
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestValueOf:
+    
+    def test_value_of_int(self):
+        obj = JFloat.valueOf(42)
+        assert obj.floatValue() == 42.0
+
+    def test_value_of_string_nan(self):
+        obj = JFloat.valueOf("NaN")
+        assert obj.isNaN()
+    
+    def test_value_of_invalid_type(self):
+        with pytest.raises(TypeError):
+            JFloat.valueOf([1, 2])   # type: ignore[arg-type]
+
+# ===========================================================================
+# 11. Python dunder methods
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestDunderMethods:
+
+    def test_str_delegates_to_to_string(self):
+        assert str(JFloat(1.0)) == "1.0"
     def test_double_value(self):
         assert JFloat(1.5).doubleValue() == 1.5
 
