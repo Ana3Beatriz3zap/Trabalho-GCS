@@ -325,3 +325,20 @@ class JFloat:
         if isinstance(self_or_f, JFloat):
             return _java_float_str(self_or_f._value)
         return _java_float_str(_to_float32(float(self_or_f)))
+
+    def hashCode(self_or_v: Union['JFloat', float] = _UNSET) -> int:  # type: ignore[override]
+        """
+        Return the hash code (= ``floatToIntBits(value)``).
+
+        Instance: ``obj.hashCode()``          → hash for *obj*'s value
+        Static:   ``JFloat.hashCode(v)``      → hash for the float32 *v*
+
+        Java: ``int hashCode()`` / ``static int hashCode(float value)``
+        """
+        if self_or_v is _UNSET:
+            raise TypeError(
+                "hashCode() requires a JFloat instance or a float argument"
+            )
+        if isinstance(self_or_v, JFloat):
+            return JFloat.floatToIntBits(self_or_v._value)
+        return JFloat.floatToIntBits(_to_float32(float(self_or_v)))
