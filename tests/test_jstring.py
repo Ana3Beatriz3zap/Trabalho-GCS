@@ -44,3 +44,8 @@ class TestStaticMethods:
     def test_valueOf_int_happy(self):
         """valueOf(int) converte inteiro."""
         assert str(JString.valueOf(42)) == "42"
+    
+    def test_valueOf_float_happy(self):
+        """valueOf(float) converte float."""
+        result = str(JString.valueOf(3.14))
+        assert "3.14" in result
