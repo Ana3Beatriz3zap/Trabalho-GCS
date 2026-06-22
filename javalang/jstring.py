@@ -426,6 +426,31 @@ class JString:
         if ic:
             return this_sub.casefold() == other_sub.casefold()
         return this_sub == other_sub
+    
+    def regionMatchesFull(
+        self,
+        ignoreCase: bool,
+        toffset: int,
+        other: "JString",
+        ooffset: int,
+        plen: int,
+    ) -> bool:
+        """Variante explícita de regionMatches com 5 argumentos (inclui ignoreCase).
+
+        Equivale a Java: regionMatches(boolean ignoreCase, int toffset,
+                                       String other, int ooffset, int len)
+        """
+        _validate_not_none(other, "other")
+        other_val = other._value if isinstance(other, JString) else other
+        if toffset < 0 or ooffset < 0:
+            return False
+        this_sub = self._value[toffset: toffset + plen]
+        other_sub = other_val[ooffset: ooffset + plen]
+        if len(this_sub) != plen or len(other_sub) != plen:
+            return False
+        if ignoreCase:
+            return this_sub.casefold() == other_sub.casefold()
+        return this_sub == other_sub
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
