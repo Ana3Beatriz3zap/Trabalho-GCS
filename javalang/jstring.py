@@ -249,3 +249,20 @@ class JString:
             if 0xD800 <= high <= 0xDBFF:
                 return 0x10000 + ((high - 0xD800) << 10) + (ch - 0xDC00)
         return ch
+    
+    def codePointCount(self, beginIndex: int, endIndex: int) -> int:
+        """Conta code points Unicode no intervalo [beginIndex, endIndex)."""
+        _validate_range(beginIndex, endIndex, len(self._chars))
+        count = 0
+        i = beginIndex
+        while i < endIndex:
+            ch = ord(self._chars[i])
+            if 0xD800 <= ch <= 0xDBFF and i + 1 < endIndex:
+                low = ord(self._chars[i + 1])
+                if 0xDC00 <= low <= 0xDFFF:
+                    i += 2
+                    count += 1
+                    continue
+            count += 1
+            i += 1
+        return count
