@@ -27,4 +27,14 @@ class TestSearch:
         """contains retorna True quando substring existe."""
         s = JString("Hello World")
         assert s.contains(JString("World")) is True
+
+    def test_startsWith_happy(self):
+        """startsWith retorna True para prefixo correto."""
+        s = JString("Hello")
+        assert s.startsWith(JString("He")) is True
+
+    def test_endsWith_happy(self):
+        """endsWith retorna True para sufixo correto."""
+        s = JString("Hello World")
+        assert s.endsWith(JString("World")) is True
  
