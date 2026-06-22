@@ -108,6 +108,22 @@ def parseUnsignedInt(s: Optional[str], radix: int = 10) -> int:
 
         return _to_int32(value)
 
+def toBinaryString(i: int) -> str:
+        """
+        Retorna representação binária do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toBinaryString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toBinaryString(-1)
+        '11111111111111111111111111111111'
+        >>> JInteger.toBinaryString(4)
+        '100'
+        """
+        return _uint_to_str(i, 2)
+    
+    
 
 def _parse_signed_core(s: Optional[str], radix: int) -> int:
     """
