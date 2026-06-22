@@ -22,6 +22,7 @@ Decisões de Projeto:
 from __future__ import annotations
  
 import re
+import sys
 from typing import Optional, Union, Any, cast
 
 # ---------------------------------------------------------------------------
@@ -192,6 +193,81 @@ class JString:
             value, (bytes, bytearray)
         ):
             self._chars = self._chars[offset: offset + count]
+
+    # ------------------------------------------------------------------
+    # Propriedade interna: str Python equivalente
+    # ------------------------------------------------------------------
+
+    @property
+    def _value(self) -> str:
+        return _from_char_list(self._chars)
+
+    # ------------------------------------------------------------------
+    # Acesso e Tamanho
+    # ------------------------------------------------------------------
+
+    def length(self) -> int:
+        """Retorna o número de code units UTF-16 (como Java)."""
+        return len(self._chars)
+
+    def isEmpty(self) -> bool:
+        """Retorna True se length() == 0."""
+        return len(self._chars) == 0
+    
+    def charAt(self, index: int) -> str:
+        """Retorna o char (code unit UTF-16) na posição index.
+
+        Lança IndexError (StringIndexOutOfBoundsException) se fora do range.
+        """
+        _validate_index(index, len(self._chars))
+        return self._chars[index]
+
+    def codePointAt(self, index: int) -> int:
+        """Retorna o Unicode code point começando em index.
+
+        Se index aponta para um high surrogate seguido de low surrogate,
+        retorna o code point suplementar combinado.
+        """
+        _validate_index(index, len(self._chars))
+        ch = ord(self._chars[index])
+        if 0xD800 <= ch <= 0xDBFF and index + 1 < len(self._chars):
+            low = ord(self._chars[index + 1])
+            if 0xDC00 <= low <= 0xDFFF:
+                return 0x10000 + ((ch - 0xD800) << 10) + (low - 0xDC00)
+        return ch
+
+    def codePointBefore(self, index: int) -> int:
+        """Retorna o code point antes de index (índice exclusivo).
+
+        Lança IndexError se index < 1 ou index > length().
+        """
+        if index < 1 or index > len(self._chars):
+            raise IndexError(
+                f"StringIndexOutOfBoundsException: index {index}"
+            )
+        ch = ord(self._chars[index - 1])
+        if 0xDC00 <= ch <= 0xDFFF and index >= 2:
+            high = ord(self._chars[index - 2])
+            if 0xD800 <= high <= 0xDBFF:
+                return 0x10000 + ((high - 0xD800) << 10) + (ch - 0xDC00)
+        return ch
+    
+    def codePointCount(self, beginIndex: int, endIndex: int) -> int:
+        """Conta code points Unicode no intervalo [beginIndex, endIndex)."""
+        _validate_range(beginIndex, endIndex, len(self._chars))
+        count = 0
+        i = beginIndex
+        while i < endIndex:
+            ch = ord(self._chars[i])
+            if 0xD800 <= ch <= 0xDBFF and i + 1 < endIndex:
+                low = ord(self._chars[i + 1])
+                if 0xDC00 <= low <= 0xDFFF:
+                    i += 2
+                    count += 1
+                    continue
+            count += 1
+            i += 1
+        return count
     
     def offsetByCodePoints(self, index: int, codePointOffset: int) -> int:
         """Retorna o índice deslocado por codePointOffset code points a partir de index."""
@@ -303,6 +379,151 @@ class JString:
         else:
             parts = re.split(regex, self._value)
         return [JString(p) for p in parts]
+    # Busca
+    # ------------------------------------------------------------------
+
+    def indexOf(
+        self,
+        ch_or_str: Union[int, str, "JString"],
+        fromIndex: int = 0,
+    ) -> int:
+        """indexOf(int ch) / indexOf(int ch, int fromIndex)
+           indexOf(String str) / indexOf(String str, int fromIndex)
+        """
+        if isinstance(ch_or_str, int):
+            # Busca por code point
+            target = chr(ch_or_str)
+            target_chars = _to_char_list(target)
+            return self._indexOf_chars(target_chars, fromIndex)
+        else:
+            s = ch_or_str._chars if isinstance(ch_or_str, JString) else _to_char_list(ch_or_str)
+            return self._indexOf_chars(s, fromIndex)
+
+    def _indexOf_chars(self, target: list[str], fromIndex: int) -> int:
+        """Busca subsequência de chars a partir de fromIndex."""
+        n = len(self._chars)
+        m = len(target)
+        start = max(fromIndex, 0)
+        if m == 0:
+            return min(start, n)
+        for i in range(start, n - m + 1):
+            if self._chars[i: i + m] == target:
+                return i
+        return -1
+
+    def lastIndexOf(
+        self,
+        ch_or_str: Union[int, str, "JString"],
+        fromIndex: Optional[int] = None,
+    ) -> int:
+        """lastIndexOf(int ch) / lastIndexOf(int ch, int fromIndex)
+           lastIndexOf(String str) / lastIndexOf(String str, int fromIndex)
+        """
+        n = len(self._chars)
+        if isinstance(ch_or_str, int):
+            target_chars = _to_char_list(chr(ch_or_str))
+        else:
+            target_chars = (
+                ch_or_str._chars
+                if isinstance(ch_or_str, JString)
+                else _to_char_list(ch_or_str)
+            )
+        m = len(target_chars)
+        start = (n - m) if fromIndex is None else min(fromIndex, n - m)
+        if m == 0:
+            return max(start, -1) if start >= 0 else 0
+        for i in range(start, -1, -1):
+            if self._chars[i: i + m] == target_chars:
+                return i
+        return -1
+    
+    def contains(self, cs: Union[str, "JString"]) -> bool:
+        """Retorna True se this contém a sequência cs."""
+        _validate_not_none(cs, "s")
+        return self.indexOf(cs) >= 0
+
+    def startsWith(self, prefix: "JString", toffset: int = 0) -> bool:
+        """Retorna True se this começa com prefix a partir de toffset."""
+        _validate_not_none(prefix, "prefix")
+        p = prefix._chars if isinstance(prefix, JString) else _to_char_list(prefix)
+        m = len(p)
+        if toffset < 0 or toffset + m > len(self._chars):
+            return False
+        return self._chars[toffset: toffset + m] == p
+
+    def endsWith(self, suffix: "JString") -> bool:
+        """Retorna True se this termina com suffix."""
+        _validate_not_none(suffix, "suffix")
+        p = suffix._chars if isinstance(suffix, JString) else _to_char_list(suffix)
+        m = len(p)
+        if m == 0:
+            return True
+        if m > len(self._chars):
+            return False
+        return self._chars[-m:] == p
+    # Transformação
+    # ------------------------------------------------------------------
+
+    def substring(self, beginIndex: int, endIndex: Optional[int] = None) -> "JString":
+        """substring(int beginIndex) / substring(int beginIndex, int endIndex)."""
+        n = len(self._chars)
+        end = n if endIndex is None else endIndex
+        _validate_range(beginIndex, end, n)
+        result = JString.__new__(JString)
+        result._chars = self._chars[beginIndex:end]
+        return result
+
+    def subSequence(self, beginIndex: int, endIndex: int) -> "JString":
+        """Retorna subsequência como JString (implementa CharSequence)."""
+        return self.substring(beginIndex, endIndex)
+
+    def concat(self, other: "JString") -> "JString":
+        """Concatena other ao final de this."""
+        _validate_not_none(other, "str")
+        other_chars = other._chars if isinstance(other, JString) else _to_char_list(other)
+        result = JString.__new__(JString)
+        result._chars = self._chars + other_chars
+        return result
+    
+    def replace(
+        self,
+        old: Union[str, "JString"],
+        new: Union[str, "JString"],
+    ) -> "JString":
+        """replace(char oldChar, char newChar) / replace(CharSequence, CharSequence)."""
+        _validate_not_none(old, "target")
+        _validate_not_none(new, "replacement")
+        old_v = old._value if isinstance(old, JString) else old
+        new_v = new._value if isinstance(new, JString) else new
+        return JString(self._value.replace(old_v, new_v))
+
+    def toLowerCase(self) -> "JString":
+        """Converte para minúsculas usando regras Unicode."""
+        return JString(self._value.lower())
+
+    def toUpperCase(self) -> "JString":
+        """Converte para maiúsculas usando regras Unicode."""
+        return JString(self._value.upper())
+
+    def trim(self) -> "JString":
+        """Remove whitespace ASCII (\\u0001–\\u0020) do início e fim (como Java)."""
+        v = self._value
+        start = 0
+        end = len(v)
+        while start < end and ord(v[start]) <= 0x20:
+            start += 1
+        while end > start and ord(v[end - 1]) <= 0x20:
+            end -= 1
+        return JString(v[start:end])
+
+    def intern(self) -> str:
+        """Retorna versão interned da string Python interna.
+
+        Nota: Java intern() retorna String do pool JVM.
+        Aqui retorna str Python interned via sys.intern().
+        Retorna str (não JString) para compatibilidade com sys.intern().
+        """
+        return sys.intern(self._value)
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
