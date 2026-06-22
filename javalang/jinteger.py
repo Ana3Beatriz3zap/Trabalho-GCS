@@ -566,6 +566,17 @@ class JInteger:
 
     hashCode = _DualMethod(_hashCode_instance, _hashCode_static)
 
+    def __gt__(self, other: 'JInteger') -> bool:
+        return self.compareTo(other) > 0
+
+    def __ge__(self, other: 'JInteger') -> bool:
+        return self.compareTo(other) >= 0
+
+    def __int__(self) -> int:
+        return self._value
+    
+    def __float__(self) -> float:
+        return self.doubleValue()
     # ------------------------------------------------------------------
     # Dunder helpers Python — facilitam uso idiomático sem alterar a API Java
     # ------------------------------------------------------------------
