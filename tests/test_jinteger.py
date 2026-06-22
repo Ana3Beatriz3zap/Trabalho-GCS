@@ -51,6 +51,30 @@ class TestFloatValue:
     def test_conversao_valor_simples(self):
         assert JInteger(42).floatValue() == 42.0
 
+
+@pytest.mark.skip(reason="Ainda não implementado na main")
+class TestDoubleValue:
+    def test_conversao_valor_simples(self):
+        assert JInteger(42).doubleValue() == 42.0
+ 
+    def test_conversao_sem_perda_de_precisao_no_limite_superior(self):
+        assert JInteger(JInteger.MAX_VALUE).doubleValue() == 2147483647.0
+
+@pytest.mark.skip(reason="Ainda não implementado na main")
+class TestEquals:
+    def test_mesmo_valor_retorna_true(self):
+        assert JInteger(5).equals(JInteger(5)) is True
+        
+    def test_valores_diferentes_retorna_false(self):
+        assert JInteger(5).equals(JInteger(6)) is False
+
+@pytest.mark.skip(reason="Ainda não implementado na main")
+class TestCompareTo:
+    def test_este_menor_que_outro_retorna_negativo(self):
+        assert JInteger(1).compareTo(JInteger(2)) < 0
+ 
+    def test_valores_iguais_retorna_zero(self):
+        assert JInteger(5).compareTo(JInteger(5)) == 0
 class TestCompareUnsigned:
     def test_menos_um_e_maior_que_qualquer_positivo_como_unsigned(self):
         assert JInteger.compareUnsigned(-1, 1) > 0
