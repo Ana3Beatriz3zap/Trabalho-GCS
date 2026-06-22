@@ -565,6 +565,15 @@ class JInteger:
         return _to_int32(value)
 
     hashCode = _DualMethod(_hashCode_instance, _hashCode_static)
+
+    def __gt__(self, other: 'JInteger') -> bool:
+        return self.compareTo(other) > 0
+
+    def __ge__(self, other: 'JInteger') -> bool:
+        return self.compareTo(other) >= 0
+
+    def __int__(self) -> int:
+        return self._value
     
     @staticmethod
     def reverseBytes(i: int) -> int:
