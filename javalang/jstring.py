@@ -22,7 +22,7 @@ Decisões de Projeto:
 from __future__ import annotations
  
 import re
-from typing import Optional, Union
+from typing import Optional, Union, Any, cast
 
 # ---------------------------------------------------------------------------
 # Mapeamento de charset Java → Python
@@ -197,7 +197,6 @@ class JString:
 # Funções auxiliares internas
 # ---------------------------------------------------------------------------
 
-
 def _java_int(value: int) -> int:
     """Trunca para inteiro Java de 32 bits (complemento de dois)."""
     value &= 0xFFFFFFFF
@@ -286,16 +285,16 @@ def _java_format(fmt: str, *args: object) -> str:
                 s = s.ljust(w_int) if "-" in flags else s.rjust(w_int)
             result.append(s)
         elif spec == "d":
-            v = int(arg)  # type: ignore[arg-type]
+            v = int(cast(Any, arg))  # Modificado aqui
             py_fmt = f"%{lf}{zf}{w}d"
             result.append(py_fmt % v)
         elif spec in ("f",):
-            v = float(arg)  # type: ignore[arg-type]
+            v = float(cast(Any, arg))  # Modificado aqui
             prec = precision or "6"
             py_fmt = f"%{lf}{zf}{w}.{prec}f"
             result.append(py_fmt % v)
         elif spec in ("e", "E"):
-            v = float(arg)  # type: ignore[arg-type]
+            v = float(cast(Any, arg))  # Modificado aqui
             prec = precision or "6"
             py_fmt = f"%{lf}{zf}{w}.{prec}{spec}"
             result.append(py_fmt % v)
@@ -314,15 +313,15 @@ def _java_format(fmt: str, *args: object) -> str:
             else:
                 raise ValueError("IllegalFormatConversionException: %c needs char")
         elif spec == "x":
-            v = int(arg)  # type: ignore[arg-type]
+            v = int(cast(Any, arg))  # Modificado aqui
             py_fmt = f"%{lf}{zf}{w}x"
             result.append(py_fmt % v)
         elif spec == "X":
-            v = int(arg)  # type: ignore[arg-type]
+            v = int(cast(Any, arg))  # Modificado aqui
             py_fmt = f"%{lf}{zf}{w}X"
             result.append(py_fmt % v)
         elif spec == "o":
-            v = int(arg)  # type: ignore[arg-type]
+            v = int(cast(Any, arg))  # Modificado aqui
             py_fmt = f"%{lf}{zf}{w}o"
             result.append(py_fmt % v)
         else:
