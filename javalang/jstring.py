@@ -360,6 +360,72 @@ class JString:
             if diff != 0:
                 return diff
         return len(a) - len(b)
+    
+    def compareToIgnoreCase(self, other: "JString") -> int:
+        """Comparação lexicográfica ignorando case."""
+        _validate_not_none(other, "str")
+        a_str = self._value.casefold()
+        b_str = (other._value if isinstance(other, JString) else other).casefold()
+        a_chars = _to_char_list(a_str)
+        b_chars = _to_char_list(b_str)
+        lim = min(len(a_chars), len(b_chars))
+        for i in range(lim):
+            diff = ord(a_chars[i]) - ord(b_chars[i])
+            if diff != 0:
+                return diff
+        return len(a_chars) - len(b_chars)
+
+    def contentEquals(self, cs: Union[str, "JString"]) -> bool:
+        """Compara conteúdo com CharSequence (str ou JString)."""
+        _validate_not_none(cs, "cs")
+        if isinstance(cs, JString):
+            return self._value == cs._value
+        return self._value == cs
+
+    def regionMatches(
+        self,
+        toffset_or_ignoreCase: Union[int, bool],
+        other: "JString",
+        ooffset: int,
+        plen: int,
+        ignoreCase: Optional[bool] = None,
+    ) -> bool:
+        """regionMatches(int toffset, String other, int ooffset, int len)
+        regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len)
+        """
+        # Detectar qual sobrecarga está sendo usada
+        if isinstance(toffset_or_ignoreCase, bool):
+            ic = toffset_or_ignoreCase
+            # neste caso: regionMatches(ignoreCase, toffset, other, ooffset, len)
+            # mas a assinatura está (bool, JString, int, int) — precisamos do toffset
+            # Ajuste: quando bool é passado, other é toffset, ooffset é other, plen é ooffset
+            # e um 5º argumento é len. Detectamos pelo ignoreCase parameter.
+            raise TypeError(
+                "Para regionMatches com ignoreCase, use: "
+                "regionMatches(ignoreCase, toffset, other, ooffset, plen)"
+            )
+        else:
+            toffset = toffset_or_ignoreCase
+            ic = False
+
+        # Se ignoreCase foi passado como 5º arg, reinterpretar
+        # Assinatura correta: regionMatches(bool, int, JString, int, int)
+        # chamada: obj.regionMatches(True, 0, other, 0, 5)
+        # → toffset_or_ignoreCase=True → detectado acima
+        # Assinatura: regionMatches(int, JString, int, int)
+        # → toffset_or_ignoreCase=0 (int)
+        _validate_not_none(other, "other")
+        other_val = other._value if isinstance(other, JString) else other
+
+        if toffset < 0 or ooffset < 0:
+            return False
+        this_sub = self._value[toffset: toffset + plen]
+        other_sub = other_val[ooffset: ooffset + plen]
+        if len(this_sub) != plen or len(other_sub) != plen:
+            return False
+        if ic:
+            return this_sub.casefold() == other_sub.casefold()
+        return this_sub == other_sub
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
