@@ -21,7 +21,8 @@ Decisões de Projeto:
  
 from __future__ import annotations
  
-from typing import Optional, Union
+import re
+from typing import Optional, Union, Any, cast
 
 # ---------------------------------------------------------------------------
 # Mapeamento de charset Java → Python
@@ -192,7 +193,7 @@ class JString:
         ):
             self._chars = self._chars[offset: offset + count]
 
-# ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # Propriedade interna: str Python equivalente
     # ------------------------------------------------------------------
 
@@ -266,3 +267,197 @@ class JString:
             count += 1
             i += 1
         return count
+    
+    def offsetByCodePoints(self, index: int, codePointOffset: int) -> int:
+        """Retorna o índice deslocado por codePointOffset code points a partir de index."""
+        n = len(self._chars)
+        if index < 0 or index > n:
+            raise IndexError(
+                f"StringIndexOutOfBoundsException: index {index}"
+            )
+        i = index
+        if codePointOffset >= 0:
+            for _ in range(codePointOffset):
+                if i >= n:
+                    raise IndexError("offsetByCodePoints: offset out of bounds")
+                ch = ord(self._chars[i])
+                if 0xD800 <= ch <= 0xDBFF and i + 1 < n:
+                    low = ord(self._chars[i + 1])
+                    if 0xDC00 <= low <= 0xDFFF:
+                        i += 2
+                        continue
+                i += 1
+        else:
+            for _ in range(-codePointOffset):
+                if i <= 0:
+                    raise IndexError("offsetByCodePoints: offset out of bounds")
+                ch = ord(self._chars[i - 1])
+                if 0xDC00 <= ch <= 0xDFFF and i >= 2:
+                    high = ord(self._chars[i - 2])
+                    if 0xD800 <= high <= 0xDBFF:
+                        i -= 2
+                        continue
+                i -= 1
+        return i
+
+    def toCharArray(self) -> list[str]:
+        """Retorna cópia da lista de char (code units UTF-16)."""
+        return list(self._chars)
+
+    def getChars(
+        self,
+        srcBegin: int,
+        srcEnd: int,
+        dst: list[str],
+        dstBegin: int,
+    ) -> None:
+        """Copia chars [srcBegin, srcEnd) para dst a partir de dstBegin (in-place)."""
+        _validate_range(srcBegin, srcEnd, len(self._chars))
+        count = srcEnd - srcBegin
+        if dstBegin < 0 or dstBegin + count > len(dst):
+            raise IndexError(
+                "ArrayIndexOutOfBoundsException: destination array too small"
+            )
+        for i in range(count):
+            dst[dstBegin + i] = self._chars[srcBegin + i]
+    
+    def getBytes(self, charset: Optional[str] = None) -> bytes:
+        """Encodes a string para bytes usando o charset fornecido (padrão: UTF-8)."""
+        cs = _resolve_charset(charset) if charset else "utf-8"
+        return self._value.encode(cs)
+
+# ---------------------------------------------------------------------------
+# Funções auxiliares internas
+# ---------------------------------------------------------------------------
+
+def _java_int(value: int) -> int:
+    """Trunca para inteiro Java de 32 bits (complemento de dois)."""
+    value &= 0xFFFFFFFF
+    if value >= 0x80000000:
+        value -= 0x100000000
+    return value
+
+
+def _java_float_str(value: float) -> str:
+    """Formata float como Java: sem trailing zeros desnecessários mas sempre com decimal."""
+    import math
+    if math.isnan(value):
+        return "NaN"
+    if math.isinf(value):
+        return "Infinity" if value > 0 else "-Infinity"
+    s = repr(value)
+    return s
+
+
+def _java_replacement(repl: str) -> str:
+    """Converte referências de grupo Java ($1, $2) para Python (\\1, \\2)."""
+    return re.sub(r"\$(\d+)", r"\\\1", repl)
+
+def _java_format(fmt: str, *args: object) -> str:
+    """Processa String.format Java convertendo para str.format Python.
+
+    Especificadores suportados: %s %d %f %b %c %x %X %o %e %E %n %%.
+    Flags suportadas: -, 0, largura, precisão.
+    """
+    result = []
+    arg_index = 0
+    i = 0
+    while i < len(fmt):
+        if fmt[i] != "%":
+            result.append(fmt[i])
+            i += 1
+            continue
+        i += 1
+        if i >= len(fmt):
+            raise ValueError("Dangling % in format string")
+        # Flags e largura/precisão
+        flags = ""
+        while i < len(fmt) and fmt[i] in "-+0 ,(":
+            flags += fmt[i]
+            i += 1
+        width = ""
+        while i < len(fmt) and fmt[i].isdigit():
+            width += fmt[i]
+            i += 1
+        precision = ""
+        if i < len(fmt) and fmt[i] == ".":
+            i += 1
+            while i < len(fmt) and fmt[i].isdigit():
+                precision += fmt[i]
+                i += 1
+        if i >= len(fmt):
+            raise ValueError("Incomplete format specifier")
+        spec = fmt[i]
+        i += 1
+
+        if spec == "%":
+            result.append("%")
+            continue
+        if spec == "n":
+            result.append("\n")
+            continue
+
+        if arg_index >= len(args):
+            raise ValueError(
+                "MissingFormatArgumentException: not enough arguments"
+            )
+        arg = args[arg_index]
+        arg_index += 1
+
+        # Construir especificador Python
+        w = width or ""
+        lf = "-" if "-" in flags else ""
+        zf = "0" if ("0" in flags and "-" not in flags) else ""
+
+        if spec == "s":
+            s = "null" if arg is None else str(arg)
+            if precision:
+                s = s[: int(precision)]
+            if width:
+                w_int = int(width)
+                s = s.ljust(w_int) if "-" in flags else s.rjust(w_int)
+            result.append(s)
+        elif spec == "d":
+            v_int = int(cast(Any, arg))  # v_int utilizado para inteiros
+            py_fmt = f"%{lf}{zf}{w}d"
+            result.append(py_fmt % v_int)
+        elif spec in ("f",):
+            v_float = float(cast(Any, arg))  # v_float utilizado para floats
+            prec = precision or "6"
+            py_fmt = f"%{lf}{zf}{w}.{prec}f"
+            result.append(py_fmt % v_float)
+        elif spec in ("e", "E"):
+            v_float = float(cast(Any, arg))  # v_float utilizado para floats
+            prec = precision or "6"
+            py_fmt = f"%{lf}{zf}{w}.{prec}{spec}"
+            result.append(py_fmt % v_float)
+        elif spec == "b":
+            if arg is None:
+                result.append("false")
+            elif isinstance(arg, bool):
+                result.append("true" if arg else "false")
+            else:
+                result.append("true")  # Java: qualquer não-null não-bool → true
+        elif spec == "c":
+            if isinstance(arg, int):
+                result.append(chr(arg))
+            elif isinstance(arg, str) and len(arg) == 1:
+                result.append(arg)
+            else:
+                raise ValueError("IllegalFormatConversionException: %c needs char")
+        elif spec == "x":
+            v_int = int(cast(Any, arg))
+            py_fmt = f"%{lf}{zf}{w}x"
+            result.append(py_fmt % v_int)
+        elif spec == "X":
+            v_int = int(cast(Any, arg))
+            py_fmt = f"%{lf}{zf}{w}X"
+            result.append(py_fmt % v_int)
+        elif spec == "o":
+            v_int = int(cast(Any, arg))
+            py_fmt = f"%{lf}{zf}{w}o"
+            result.append(py_fmt % v_int)
+        else:
+            raise ValueError(f"UnknownFormatConversionException: '{spec}'")
+
+    return "".join(result)
