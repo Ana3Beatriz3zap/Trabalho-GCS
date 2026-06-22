@@ -211,3 +211,41 @@ class JString:
     def isEmpty(self) -> bool:
         """Retorna True se length() == 0."""
         return len(self._chars) == 0
+    
+    def charAt(self, index: int) -> str:
+        """Retorna o char (code unit UTF-16) na posição index.
+
+        Lança IndexError (StringIndexOutOfBoundsException) se fora do range.
+        """
+        _validate_index(index, len(self._chars))
+        return self._chars[index]
+
+    def codePointAt(self, index: int) -> int:
+        """Retorna o Unicode code point começando em index.
+
+        Se index aponta para um high surrogate seguido de low surrogate,
+        retorna o code point suplementar combinado.
+        """
+        _validate_index(index, len(self._chars))
+        ch = ord(self._chars[index])
+        if 0xD800 <= ch <= 0xDBFF and index + 1 < len(self._chars):
+            low = ord(self._chars[index + 1])
+            if 0xDC00 <= low <= 0xDFFF:
+                return 0x10000 + ((ch - 0xD800) << 10) + (low - 0xDC00)
+        return ch
+
+    def codePointBefore(self, index: int) -> int:
+        """Retorna o code point antes de index (índice exclusivo).
+
+        Lança IndexError se index < 1 ou index > length().
+        """
+        if index < 1 or index > len(self._chars):
+            raise IndexError(
+                f"StringIndexOutOfBoundsException: index {index}"
+            )
+        ch = ord(self._chars[index - 1])
+        if 0xDC00 <= ch <= 0xDFFF and index >= 2:
+            high = ord(self._chars[index - 2])
+            if 0xD800 <= high <= 0xDBFF:
+                return 0x10000 + ((high - 0xD800) << 10) + (ch - 0xDC00)
+        return ch
