@@ -7,7 +7,6 @@ Suíte de testes para os métodos de conversão numérica de JInteger:
     - floatValue()
 """
 import pytest
-
 from javalang.jinteger import JInteger
 
 class TestByteValue:
@@ -60,7 +59,6 @@ class TestDoubleValue:
     def test_conversao_sem_perda_de_precisao_no_limite_superior(self):
         assert JInteger(JInteger.MAX_VALUE).doubleValue() == 2147483647.0
 
-@pytest.mark.skip(reason="Ainda não implementado na main")
 class TestEquals:
     def test_mesmo_valor_retorna_true(self):
         assert JInteger(5).equals(JInteger(5)) is True
@@ -68,7 +66,6 @@ class TestEquals:
     def test_valores_diferentes_retorna_false(self):
         assert JInteger(5).equals(JInteger(6)) is False
 
-@pytest.mark.skip(reason="Ainda não implementado na main")
 class TestCompareTo:
     def test_este_menor_que_outro_retorna_negativo(self):
         assert JInteger(1).compareTo(JInteger(2)) < 0
@@ -130,7 +127,6 @@ class TestToString:
         assert JInteger.toString(255, 16) == 'ff'
  
  
-@pytest.mark.skip(reason="Ainda não está na main")
 class TestHashCode:
     def test_instancia_sem_argumentos(self):
         assert JInteger(42).hashCode() == 42

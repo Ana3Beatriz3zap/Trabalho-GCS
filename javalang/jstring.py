@@ -191,4 +191,84 @@ class JString:
             value, (bytes, bytearray)
         ):
             self._chars = self._chars[offset: offset + count]
- 
+   # ------------------------------------------------------------------
+    # Métodos Estáticos
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def valueOf(value: object) -> "JString":
+        """String.valueOf(Object) — converte qualquer valor para JString.
+
+        Sobrecargas Java mapeadas:
+          valueOf(int)     → str(value)
+          valueOf(long)    → str(value)
+          valueOf(float)   → formatação Java-like
+          valueOf(double)  → formatação Java-like
+          valueOf(boolean) → "true" / "false"
+          valueOf(char)    → string de 1 char
+          valueOf(char[])  → string da lista de chars
+          valueOf(Object)  → str(value), "null" se None
+        """
+        if value is None:
+            return JString("null")
+        if isinstance(value, bool):
+            return JString("true" if value else "false")
+        if isinstance(value, float):
+            return JString(_java_float_str(value))
+        if isinstance(value, list):
+            return JString(_from_char_list(value))
+        if isinstance(value, JString):
+            return JString(value)
+        return JString(str(value))
+
+    @staticmethod
+    def copyValueOf(
+        data: list[str],
+        offset: Optional[int] = None,
+        count: Optional[int] = None,
+    ) -> "JString":
+        """copyValueOf(char[]) / copyValueOf(char[], int offset, int count)."""
+        if offset is not None and count is not None:
+            segment = data[offset: offset + count]
+        else:
+            segment = data
+        result = JString.__new__(JString)
+        result._chars = list(segment)
+        return result
+
+    @staticmethod
+    def format(fmt: str, *args: object) -> "JString":
+        """String.format(String format, Object... args).
+
+        Suporta: %s %d %f %b %c %x %o %e %n %%.
+        Converte especificadores Java para Python e aplica formatação.
+        """
+        _validate_not_none(fmt, "format")
+        result = _java_format(fmt, *args)
+        return JString(result)
+
+    @staticmethod
+    def join(
+        delimiter: Union[str, "JString"],
+        *elements: Union[str, "JString"],
+    ) -> "JString":
+        """String.join(CharSequence delimiter, CharSequence... elements)
+           String.join(CharSequence delimiter, Iterable<? extends CharSequence> elements)
+
+        Se o único elemento for um iterável, join seus itens.
+        """
+        _validate_not_none(delimiter, "delimiter")
+        delim = delimiter._value if isinstance(delimiter, JString) else str(delimiter)
+        # Detectar se foi passado um único iterável
+        if len(elements) == 1 and hasattr(elements[0], "__iter__") and not isinstance(
+            elements[0], (str, JString)
+        ):
+            parts = [
+                e._value if isinstance(e, JString) else str(e)
+                for e in elements[0]
+            ]
+        else:
+            parts = [
+                e._value if isinstance(e, JString) else str(e) for e in elements
+            ]
+        return JString(delim.join(parts))
