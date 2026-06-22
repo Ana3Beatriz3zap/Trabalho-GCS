@@ -1,5 +1,6 @@
 import struct
 import math
+from typing import Union
 
 _UNSET = object()
 
@@ -197,3 +198,103 @@ class JFloat:
     reflection; the built-in ``float`` type is the nearest conceptual
     equivalent, despite being 64-bit rather than 32-bit.
     """
+
+    # ------------------------------------------------------------------
+    # Constructor
+    # ------------------------------------------------------------------
+
+    def __init__(self, value: Union[float, int, str, 'JFloat']) -> None:
+        """
+        Construct a JFloat from a numeric or string value.
+
+        Mirrors Java's three constructors::
+
+            Float(float value)   – pass any Python ``float`` or ``int``
+            Float(double value)  – identical in Python (no distinct double)
+            Float(String s)      – pass a ``str``; parsed via ``parseFloat()``
+
+        Args:
+            value: ``float``, ``int``, ``str``, or another ``JFloat``.
+
+        Raises:
+            TypeError:  if *value* is not a supported type.
+            ValueError: if *value* is a ``str`` that cannot be parsed
+                        (Java equivalent: ``NumberFormatException``).
+        """
+        if isinstance(value, JFloat):
+            self._value: float = value._value
+        elif isinstance(value, str):
+            self._value = JFloat.parseFloat(value)
+        elif isinstance(value, (int, float)):
+            self._value = _to_float32(float(value))
+        else:
+            raise TypeError(
+                f"JFloat() requires float, int, str, or JFloat, "
+                f"not '{type(value).__name__}'"
+            )
+        
+
+    # ------------------------------------------------------------------
+    # Static — parsing & value factories
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def parseFloat(s: str) -> float:
+        """
+        Parse a string as a float32 value.
+
+        Java: ``static float parseFloat(String s)``
+
+        Accepted formats:
+
+        * Named literals (case-sensitive): ``"NaN"``, ``"Infinity"``,
+          ``"+Infinity"``, ``"-Infinity"``
+        * Decimal: ``"1.5"``, ``"-3.14"``, ``"1.5e3"``, ``"1.5E-3"``
+        * Hexadecimal float: ``"0x1.8p0"``, ``"0x1.8P-1"``
+        * Leading/trailing whitespace is stripped.
+
+        Args:
+            s: the string to parse.
+
+        Raises:
+            ValueError: if *s* is ``None`` or cannot be parsed
+                        (Java: ``NullPointerException`` / ``NumberFormatException``).
+        """
+        if s is None:
+            raise ValueError(
+                "null input (Java equivalent: NullPointerException)"
+            )
+        s = s.strip()
+        if not s:
+            raise ValueError(
+                "empty string cannot be parsed as float "
+                "(Java equivalent: NumberFormatException)"
+            )
+
+        # Java-specified named literals (exact case, per the Java spec)
+        if s == "NaN":
+            return float('nan')
+        if s in ("Infinity", "+Infinity"):
+            return float('inf')
+        if s == "-Infinity":
+            return float('-inf')
+
+        # Hexadecimal floating-point (Java supports 0x… format in parseFloat)
+        lower = s.lower()
+        if '0x' in lower:
+            try:
+                return _to_float32(float.fromhex(s))
+            except ValueError:
+                raise ValueError(
+                    f"Cannot parse '{s}' as float "
+                    f"(Java equivalent: NumberFormatException)"
+                )
+
+        # Decimal floating-point (Python float() handles all standard forms)
+        try:
+            return _to_float32(float(s))
+        except ValueError:
+            raise ValueError(
+                f"Cannot parse '{s}' as float "
+                f"(Java equivalent: NumberFormatException)"
+            )
