@@ -325,6 +325,41 @@ class JString:
         """Encodes a string para bytes usando o charset fornecido (padrão: UTF-8)."""
         cs = _resolve_charset(charset) if charset else "utf-8"
         return self._value.encode(cs)
+    
+    # ------------------------------------------------------------------
+    # Comparação
+    # ------------------------------------------------------------------
+
+    def equals(self, other: object) -> bool:
+        """Compara com outro objeto. Retorna True apenas se JString com mesmo conteúdo."""
+        if isinstance(other, JString):
+            return self._chars == other._chars
+        if isinstance(other, str):
+            return self._value == other
+        return False
+
+    def equalsIgnoreCase(self, other: Optional["JString"]) -> bool:
+        """Compara ignorando case (ASCII fold + Unicode fold)."""
+        if other is None:
+            return False
+        if isinstance(other, str):
+            return self._value.casefold() == other.casefold()
+        return self._value.casefold() == other._value.casefold()
+
+    def compareTo(self, other: "JString") -> int:
+        """Comparação lexicográfica por code units UTF-16.
+
+        Retorna negativo, zero ou positivo conforme Java.
+        """
+        _validate_not_none(other, "anotherString")
+        a = self._chars
+        b = other._chars if isinstance(other, JString) else _to_char_list(other)
+        lim = min(len(a), len(b))
+        for i in range(lim):
+            diff = ord(a[i]) - ord(b[i])
+            if diff != 0:
+                return diff
+        return len(a) - len(b)
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
