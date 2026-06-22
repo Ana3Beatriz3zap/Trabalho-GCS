@@ -50,4 +50,13 @@ class TestConstructors:
         with pytest.raises(TypeError):
             JString(12345)  # int puro não é suportado
  
+# ===========================================================================
+# Acesso e Tamanho
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestAccessAndSize:
+ 
+    def test_length_happy(self, hello):
+        """length() retorna número de code units."""
+        assert hello.length() == 13
  
