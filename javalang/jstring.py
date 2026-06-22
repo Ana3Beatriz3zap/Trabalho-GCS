@@ -271,6 +271,30 @@ class JString:
         _validate_not_none(regex, "regex")
         _validate_not_none(replacement, "replacement")
         return JString(re.sub(regex, _java_replacement(replacement), self._value))
+    
+    def split(self, regex: str, limit: Optional[int] = None) -> list["JString"]:
+        """split(String regex) / split(String regex, int limit).
+
+        Comportamento Java:
+        - limit=0 (ou None): remove trailing empty strings
+        - limit>0: no máximo limit partes
+        - limit<0: sem limite, mantém trailing empty strings
+        """
+        _validate_not_none(regex, "regex")
+        if limit is None or limit == 0:
+            parts = re.split(regex, self._value)
+            # Remove trailing empty strings (como Java com limit=0),
+            # mas preserva [""] quando a string original é vazia.
+            if parts != [""]:
+                while parts and parts[-1] == "":
+                    parts.pop()
+                if not parts:
+                    parts = [""]
+        elif limit > 0:
+            parts = re.split(regex, self._value, maxsplit=limit - 1)
+        else:
+            parts = re.split(regex, self._value)
+        return [JString(p) for p in parts]
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
