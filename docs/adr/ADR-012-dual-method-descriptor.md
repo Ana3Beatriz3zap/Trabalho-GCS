@@ -1,4 +1,4 @@
-# ADR-003: Sobrecarga de Métodos Simulada via Descritor `_DualMethod`
+# ADR-012: Sobrecarga de Métodos Simulada via Descritor `_DualMethod`
 
 ## Status
 

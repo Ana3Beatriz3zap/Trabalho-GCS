@@ -1,4 +1,4 @@
-# ADR-005: Conversões Numéricas com Perda — `byteValue`, `shortValue` e `floatValue`
+# ADR-009: Conversões Numéricas com Perda — `byteValue`, `shortValue` e `floatValue`
 
 ## Status
 
@@ -41,17 +41,20 @@ introduz dependência para operação solucionável com aritmética pura.
 aritmética direta e requer pré-processamento antes do pack.
 
 **Aritmética direta com máscara e ajuste de sinal:**
+
 ```python
 def byteValue(self) -> int:
     v = self._value & 0xFF
     return v - 256 if v >= 128 else v
 ```
+
 Zero dependências, explícito, testável, e consistente com `_to_int32` (ADR-002).
 
 ### floatValue
 
 **`float(self._value)` diretamente:** simples, mas retorna double-precision — para
 valores > 2²⁴, diverge do Java:
+
 ```python
 float(16777217)  # → 16777217.0  (errado: Java retorna 16777216.0)
 ```
