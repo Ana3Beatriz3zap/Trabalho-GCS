@@ -191,4 +191,23 @@ class JString:
             value, (bytes, bytearray)
         ):
             self._chars = self._chars[offset: offset + count]
- 
+
+# ------------------------------------------------------------------
+    # Propriedade interna: str Python equivalente
+    # ------------------------------------------------------------------
+
+    @property
+    def _value(self) -> str:
+        return _from_char_list(self._chars)
+
+    # ------------------------------------------------------------------
+    # Acesso e Tamanho
+    # ------------------------------------------------------------------
+
+    def length(self) -> int:
+        """Retorna o número de code units UTF-16 (como Java)."""
+        return len(self._chars)
+
+    def isEmpty(self) -> bool:
+        """Retorna True se length() == 0."""
+        return len(self._chars) == 0
