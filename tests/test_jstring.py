@@ -9,6 +9,46 @@ Estrutura: 2 testes por método
 import pytest
 from javalang.jstring import JString
 # ===========================================================================
+# Acesso e Tamanho
+# ===========================================================================
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestAccessAndSize:
+  
+    def test_codePointBefore_happy(self):
+        """codePointBefore(1) retorna code point do primeiro char."""
+        s = JString("Z")
+        assert s.codePointBefore(1) == 90  # ord('Z')
+
+     
+    def test_codePointCount_happy(self):
+        """codePointCount de string BMP conta 1:1."""
+        s = JString("hello")
+        assert s.codePointCount(0, 5) == 5
+
+     
+    def test_offsetByCodePoints_happy(self):
+        """offsetByCodePoints avança N code points."""
+        s = JString("abcde")
+        assert s.offsetByCodePoints(0, 3) == 3
+
+     
+    def test_toCharArray_happy(self):
+        """toCharArray retorna lista de chars."""
+        s = JString("abc")
+        assert s.toCharArray() == ["a", "b", "c"]
+
+    def test_getChars_happy(self):
+        """getChars copia intervalo para dst."""
+        s = JString("Hello")
+        dst = [" "] * 5
+        s.getChars(1, 4, dst, 0)
+        assert dst[:3] == ["e", "l", "l"]
+
+    def test_getBytes_happy(self):
+        """getBytes() retorna UTF-8 por padrão."""
+        s = JString("hi")
+        assert s.getBytes() == b"hi"
+ 
 # Busca
 # ===========================================================================
 @pytest.mark.skip(reason="Ainda não está na main")
