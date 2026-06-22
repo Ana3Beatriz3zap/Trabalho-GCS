@@ -552,6 +552,93 @@ class JString:
         Retorna str (não JString) para compatibilidade com sys.intern().
         """
         return sys.intern(self._value)
+    
+    def contentEquals(self, cs: Union[str, "JString"]) -> bool:
+        """Compara conteúdo com CharSequence (str ou JString)."""
+        _validate_not_none(cs, "cs")
+        if isinstance(cs, JString):
+            return self._value == cs._value
+        return self._value == cs
+
+    def regionMatches(
+        self,
+        toffset_or_ignoreCase: Union[int, bool],
+        other: "JString",
+        ooffset: int,
+        plen: int,
+        ignoreCase: Optional[bool] = None,
+    ) -> bool:
+        """regionMatches(int toffset, String other, int ooffset, int len)
+        regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len)
+        """
+        # Detectar qual sobrecarga está sendo usada
+        if isinstance(toffset_or_ignoreCase, bool):
+            ic = toffset_or_ignoreCase
+            # neste caso: regionMatches(ignoreCase, toffset, other, ooffset, len)
+            # mas a assinatura está (bool, JString, int, int) — precisamos do toffset
+            # Ajuste: quando bool é passado, other é toffset, ooffset é other, plen é ooffset
+            # e um 5º argumento é len. Detectamos pelo ignoreCase parameter.
+            raise TypeError(
+                "Para regionMatches com ignoreCase, use: "
+                "regionMatches(ignoreCase, toffset, other, ooffset, plen)"
+            )
+        else:
+            toffset = toffset_or_ignoreCase
+            ic = False
+
+        # Se ignoreCase foi passado como 5º arg, reinterpretar
+        # Assinatura correta: regionMatches(bool, int, JString, int, int)
+        # chamada: obj.regionMatches(True, 0, other, 0, 5)
+        # → toffset_or_ignoreCase=True → detectado acima
+        # Assinatura: regionMatches(int, JString, int, int)
+        # → toffset_or_ignoreCase=0 (int)
+        _validate_not_none(other, "other")
+        other_val = other._value if isinstance(other, JString) else other
+
+        if toffset < 0 or ooffset < 0:
+            return False
+        this_sub = self._value[toffset: toffset + plen]
+        other_sub = other_val[ooffset: ooffset + plen]
+        if len(this_sub) != plen or len(other_sub) != plen:
+            return False
+        if ic:
+            return this_sub.casefold() == other_sub.casefold()
+        return this_sub == other_sub
+
+    def regionMatchesFull(
+        self,
+        ignoreCase: bool,
+        toffset: int,
+        other: "JString",
+        ooffset: int,
+        plen: int,
+    ) -> bool:
+        """Variante explícita de regionMatches com 5 argumentos (inclui ignoreCase).
+
+        Equivale a Java: regionMatches(boolean ignoreCase, int toffset,
+                                       String other, int ooffset, int len)
+        """
+        _validate_not_none(other, "other")
+        other_val = other._value if isinstance(other, JString) else other
+        if toffset < 0 or ooffset < 0:
+            return False
+        this_sub = self._value[toffset: toffset + plen]
+        other_sub = other_val[ooffset: ooffset + plen]
+        if len(this_sub) != plen or len(other_sub) != plen:
+            return False
+        if ignoreCase:
+            return this_sub.casefold() == other_sub.casefold()
+        return this_sub == other_sub
+
+    def hashCode(self) -> int:
+        """Calcula hash exatamente como Java: s[0]*31^(n-1) + ... + s[n-1].
+
+        Aplica overflow de inteiro de 32 bits com complemento de dois.
+        """
+        h = 0
+        for ch in self._chars:
+            h = _java_int(31 * h + ord(ch))
+        return h
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
