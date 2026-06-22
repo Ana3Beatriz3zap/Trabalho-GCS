@@ -6,6 +6,8 @@ Suíte de testes para os métodos de conversão numérica de JInteger:
     - longValue()
     - floatValue()
 """
+import pytest
+
 from javalang.jinteger import JInteger
 
 class TestByteValue:
@@ -73,6 +75,65 @@ class TestRemainderUnsigned:
 class TestParseInt:
     def test_string_decimal_simples(self):
         assert JInteger.parseInt("473") == 473
+    def test_conversao_valor_negativo(self):
+        assert JInteger(-42).floatValue() == -42.0
+
+class TestToBinaryString:
+    def test_valor_positivo_simples(self):
+        assert JInteger.toBinaryString(4) == '100'
+ 
+    def test_negativo_interpretado_como_unsigned_32_bits(self):
+        assert JInteger.toBinaryString(-1) == '1' * 32
+
+class TestToHexString:
+    def test_valor_positivo_simples(self):
+        assert JInteger.toHexString(255) == 'ff'
+ 
+    def test_negativo_interpretado_como_unsigned_32_bits(self):
+        assert JInteger.toHexString(-1) == 'ffffffff'
+
+class TestToOctalString:
+    def test_valor_positivo_simples(self):
+        assert JInteger.toOctalString(8) == '10'
+ 
+
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestToString:
+    def test_instancia_sem_argumentos(self):
+        assert JInteger(42).toString() == '42'
+ 
+    def test_estatico_com_radix(self):
+        assert JInteger.toString(255, 16) == 'ff'
+ 
+ 
+@pytest.mark.skip(reason="Ainda não está na main")
+class TestHashCode:
+    def test_instancia_sem_argumentos(self):
+        assert JInteger(42).hashCode() == 42
+
+    def test_estatico_com_valor_negativo(self):
+        assert JInteger.hashCode(-1) == -1
+ 
+class TestParseUnsignedInt:
+    def test_string_decimal_simples(self):
+        assert JInteger.parseUnsignedInt("ff", 16) == 255
+ 
+    def test_valor_acima_de_max_value_retorna_negativo(self):
+        assert JInteger.parseUnsignedInt("4294967295") == -1
+
+class TestValueOf:
+    def test_valor_a_partir_de_string_com_radix(self):
+        assert JInteger.valueOf("ff", 16).intValue() == 255
+    
+    def test_cache_retorna_mesma_instancia_no_intervalo_128(self):
+        assert JInteger.valueOf(-128) is JInteger.valueOf(-128)
+
+class TestDecode:
+    def test_string_hexadecimal_com_prefixo_0x(self):
+        assert JInteger.decode("0xFF").intValue() == 255
+ 
+    def test_string_octal_negativa(self):
+        assert JInteger.decode("-017").intValue() == -15
 
 class TestSum:
     def test_soma_simples(self):
