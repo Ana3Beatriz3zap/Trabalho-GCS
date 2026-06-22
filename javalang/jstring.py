@@ -328,6 +328,88 @@ class JString:
         return self._value.encode(cs)
     
     # ------------------------------------------------------------------
+    # Busca
+    # ------------------------------------------------------------------
+
+    def indexOf(
+        self,
+        ch_or_str: Union[int, str, "JString"],
+        fromIndex: int = 0,
+    ) -> int:
+        """indexOf(int ch) / indexOf(int ch, int fromIndex)
+           indexOf(String str) / indexOf(String str, int fromIndex)
+        """
+        if isinstance(ch_or_str, int):
+            # Busca por code point
+            target = chr(ch_or_str)
+            target_chars = _to_char_list(target)
+            return self._indexOf_chars(target_chars, fromIndex)
+        else:
+            s = ch_or_str._chars if isinstance(ch_or_str, JString) else _to_char_list(ch_or_str)
+            return self._indexOf_chars(s, fromIndex)
+
+    def _indexOf_chars(self, target: list[str], fromIndex: int) -> int:
+        """Busca subsequência de chars a partir de fromIndex."""
+        n = len(self._chars)
+        m = len(target)
+        start = max(fromIndex, 0)
+        if m == 0:
+            return min(start, n)
+        for i in range(start, n - m + 1):
+            if self._chars[i: i + m] == target:
+                return i
+        return -1
+
+    def lastIndexOf(
+        self,
+        ch_or_str: Union[int, str, "JString"],
+        fromIndex: Optional[int] = None,
+    ) -> int:
+        """lastIndexOf(int ch) / lastIndexOf(int ch, int fromIndex)
+           lastIndexOf(String str) / lastIndexOf(String str, int fromIndex)
+        """
+        n = len(self._chars)
+        if isinstance(ch_or_str, int):
+            target_chars = _to_char_list(chr(ch_or_str))
+        else:
+            target_chars = (
+                ch_or_str._chars
+                if isinstance(ch_or_str, JString)
+                else _to_char_list(ch_or_str)
+            )
+        m = len(target_chars)
+        start = (n - m) if fromIndex is None else min(fromIndex, n - m)
+        if m == 0:
+            return max(start, -1) if start >= 0 else 0
+        for i in range(start, -1, -1):
+            if self._chars[i: i + m] == target_chars:
+                return i
+        return -1
+    
+    def contains(self, cs: Union[str, "JString"]) -> bool:
+        """Retorna True se this contém a sequência cs."""
+        _validate_not_none(cs, "s")
+        return self.indexOf(cs) >= 0
+
+    def startsWith(self, prefix: "JString", toffset: int = 0) -> bool:
+        """Retorna True se this começa com prefix a partir de toffset."""
+        _validate_not_none(prefix, "prefix")
+        p = prefix._chars if isinstance(prefix, JString) else _to_char_list(prefix)
+        m = len(p)
+        if toffset < 0 or toffset + m > len(self._chars):
+            return False
+        return self._chars[toffset: toffset + m] == p
+
+    def endsWith(self, suffix: "JString") -> bool:
+        """Retorna True se this termina com suffix."""
+        _validate_not_none(suffix, "suffix")
+        p = suffix._chars if isinstance(suffix, JString) else _to_char_list(suffix)
+        m = len(p)
+        if m == 0:
+            return True
+        if m > len(self._chars):
+            return False
+        return self._chars[-m:] == p
     # Transformação
     # ------------------------------------------------------------------
 
