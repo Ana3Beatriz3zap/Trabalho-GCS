@@ -38,8 +38,6 @@ class TestSearch:
         s = JString("Hello World")
         assert s.endsWith(JString("World")) is True
  
-import pytest
-from javalang.jstring import JString
 # ===========================================================================
 # Transformação
 # ===========================================================================
