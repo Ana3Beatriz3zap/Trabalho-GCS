@@ -224,6 +224,14 @@ class JString:
                         continue
                 i -= 1
         return i
+    
+    # ------------------------------------------------------------------
+    # Propriedade interna: str Python equivalente
+    # ------------------------------------------------------------------
+
+    @property
+    def _value(self) -> str:
+        return _from_char_list(self._chars)
 
     def toCharArray(self) -> list[str]:
         """Retorna cópia da lista de char (code units UTF-16)."""
