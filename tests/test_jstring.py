@@ -1,4 +1,4 @@
- """
+"""
 Testes unitários para JString (Java SE 8 String API em Python)
  
 Estrutura: 2 testes por método
@@ -30,3 +30,22 @@ class TestAccessAndSize:
         """offsetByCodePoints avança N code points."""
         s = JString("abcde")
         assert s.offsetByCodePoints(0, 3) == 3
+
+     
+    def test_toCharArray_happy(self):
+        """toCharArray retorna lista de chars."""
+        s = JString("abc")
+        assert s.toCharArray() == ["a", "b", "c"]
+
+    def test_getChars_happy(self):
+        """getChars copia intervalo para dst."""
+        s = JString("Hello")
+        dst = [" "] * 5
+        s.getChars(1, 4, dst, 0)
+        assert dst[:3] == ["e", "l", "l"]
+
+    def test_getBytes_happy(self):
+        """getBytes() retorna UTF-8 por padrão."""
+        s = JString("hi")
+        assert s.getBytes() == b"hi"
+ 
