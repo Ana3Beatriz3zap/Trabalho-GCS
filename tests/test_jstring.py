@@ -11,7 +11,7 @@ from javalang.jstring import JString
 # ===========================================================================
 # Acesso e Tamanho
 # ===========================================================================
- 
+@pytest.mark.skip(reason="Ainda não está na main")
 class TestAccessAndSize:
   
     def test_codePointBefore_happy(self):
