@@ -343,19 +343,19 @@ def _java_format(fmt: str, *args: object) -> str:
                 s = s.ljust(w_int) if "-" in flags else s.rjust(w_int)
             result.append(s)
         elif spec == "d":
-            v = int(cast(Any, arg))  # Modificado aqui
+            v_int = int(cast(Any, arg))  # v_int utilizado para inteiros
             py_fmt = f"%{lf}{zf}{w}d"
-            result.append(py_fmt % v)
+            result.append(py_fmt % v_int)
         elif spec in ("f",):
-            v = float(cast(Any, arg))  # Modificado aqui
+            v_float = float(cast(Any, arg))  # v_float utilizado para floats
             prec = precision or "6"
             py_fmt = f"%{lf}{zf}{w}.{prec}f"
-            result.append(py_fmt % v)
+            result.append(py_fmt % v_float)
         elif spec in ("e", "E"):
-            v = float(cast(Any, arg))  # Modificado aqui
+            v_float = float(cast(Any, arg))  # v_float utilizado para floats
             prec = precision or "6"
             py_fmt = f"%{lf}{zf}{w}.{prec}{spec}"
-            result.append(py_fmt % v)
+            result.append(py_fmt % v_float)
         elif spec == "b":
             if arg is None:
                 result.append("false")
@@ -371,19 +371,18 @@ def _java_format(fmt: str, *args: object) -> str:
             else:
                 raise ValueError("IllegalFormatConversionException: %c needs char")
         elif spec == "x":
-            v = int(cast(Any, arg))  # Modificado aqui
+            v_int = int(cast(Any, arg))
             py_fmt = f"%{lf}{zf}{w}x"
-            result.append(py_fmt % v)
+            result.append(py_fmt % v_int)
         elif spec == "X":
-            v = int(cast(Any, arg))  # Modificado aqui
+            v_int = int(cast(Any, arg))
             py_fmt = f"%{lf}{zf}{w}X"
-            result.append(py_fmt % v)
+            result.append(py_fmt % v_int)
         elif spec == "o":
-            v = int(cast(Any, arg))  # Modificado aqui
+            v_int = int(cast(Any, arg))
             py_fmt = f"%{lf}{zf}{w}o"
-            result.append(py_fmt % v)
+            result.append(py_fmt % v_int)
         else:
             raise ValueError(f"UnknownFormatConversionException: '{spec}'")
 
     return "".join(result)
-    
