@@ -21,7 +21,9 @@ Decisões de Projeto:
  
 from __future__ import annotations
  
-from typing import Optional, Union
+import re
+import sys
+from typing import Optional, Union, Any, cast
 
 # ---------------------------------------------------------------------------
 # Mapeamento de charset Java → Python
