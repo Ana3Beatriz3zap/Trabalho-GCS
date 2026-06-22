@@ -220,3 +220,112 @@ def _java_float_str(value: float) -> str:
 def _java_replacement(repl: str) -> str:
     """Converte referências de grupo Java ($1, $2) para Python (\\1, \\2)."""
     return re.sub(r"\$(\d+)", r"\\\1", repl)
+
+def _java_format(fmt: str, *args: object) -> str:
+    """Processa String.format Java convertendo para str.format Python.
+
+    Especificadores suportados: %s %d %f %b %c %x %X %o %e %E %n %%.
+    Flags suportadas: -, 0, largura, precisão.
+    """
+    result = []
+    arg_index = 0
+    i = 0
+    while i < len(fmt):
+        if fmt[i] != "%":
+            result.append(fmt[i])
+            i += 1
+            continue
+        i += 1
+        if i >= len(fmt):
+            raise ValueError("Dangling % in format string")
+        # Flags e largura/precisão
+        flags = ""
+        while i < len(fmt) and fmt[i] in "-+0 ,(":
+            flags += fmt[i]
+            i += 1
+        width = ""
+        while i < len(fmt) and fmt[i].isdigit():
+            width += fmt[i]
+            i += 1
+        precision = ""
+        if i < len(fmt) and fmt[i] == ".":
+            i += 1
+            while i < len(fmt) and fmt[i].isdigit():
+                precision += fmt[i]
+                i += 1
+        if i >= len(fmt):
+            raise ValueError("Incomplete format specifier")
+        spec = fmt[i]
+        i += 1
+
+        if spec == "%":
+            result.append("%")
+            continue
+        if spec == "n":
+            result.append("\n")
+            continue
+
+        if arg_index >= len(args):
+            raise ValueError(
+                "MissingFormatArgumentException: not enough arguments"
+            )
+        arg = args[arg_index]
+        arg_index += 1
+
+        # Construir especificador Python
+        w = width or ""
+        lf = "-" if "-" in flags else ""
+        zf = "0" if ("0" in flags and "-" not in flags) else ""
+
+        if spec == "s":
+            s = "null" if arg is None else str(arg)
+            if precision:
+                s = s[: int(precision)]
+            if width:
+                w_int = int(width)
+                s = s.ljust(w_int) if "-" in flags else s.rjust(w_int)
+            result.append(s)
+        elif spec == "d":
+            v = int(arg)  # type: ignore[arg-type]
+            py_fmt = f"%{lf}{zf}{w}d"
+            result.append(py_fmt % v)
+        elif spec in ("f",):
+            v = float(arg)  # type: ignore[arg-type]
+            prec = precision or "6"
+            py_fmt = f"%{lf}{zf}{w}.{prec}f"
+            result.append(py_fmt % v)
+        elif spec in ("e", "E"):
+            v = float(arg)  # type: ignore[arg-type]
+            prec = precision or "6"
+            py_fmt = f"%{lf}{zf}{w}.{prec}{spec}"
+            result.append(py_fmt % v)
+        elif spec == "b":
+            if arg is None:
+                result.append("false")
+            elif isinstance(arg, bool):
+                result.append("true" if arg else "false")
+            else:
+                result.append("true")  # Java: qualquer não-null não-bool → true
+        elif spec == "c":
+            if isinstance(arg, int):
+                result.append(chr(arg))
+            elif isinstance(arg, str) and len(arg) == 1:
+                result.append(arg)
+            else:
+                raise ValueError("IllegalFormatConversionException: %c needs char")
+        elif spec == "x":
+            v = int(arg)  # type: ignore[arg-type]
+            py_fmt = f"%{lf}{zf}{w}x"
+            result.append(py_fmt % v)
+        elif spec == "X":
+            v = int(arg)  # type: ignore[arg-type]
+            py_fmt = f"%{lf}{zf}{w}X"
+            result.append(py_fmt % v)
+        elif spec == "o":
+            v = int(arg)  # type: ignore[arg-type]
+            py_fmt = f"%{lf}{zf}{w}o"
+            result.append(py_fmt % v)
+        else:
+            raise ValueError(f"UnknownFormatConversionException: '{spec}'")
+
+    return "".join(result)
