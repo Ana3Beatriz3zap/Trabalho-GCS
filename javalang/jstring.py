@@ -192,6 +192,64 @@ class JString:
             value, (bytes, bytearray)
         ):
             self._chars = self._chars[offset: offset + count]
+    
+    def offsetByCodePoints(self, index: int, codePointOffset: int) -> int:
+        """Retorna o índice deslocado por codePointOffset code points a partir de index."""
+        n = len(self._chars)
+        if index < 0 or index > n:
+            raise IndexError(
+                f"StringIndexOutOfBoundsException: index {index}"
+            )
+        i = index
+        if codePointOffset >= 0:
+            for _ in range(codePointOffset):
+                if i >= n:
+                    raise IndexError("offsetByCodePoints: offset out of bounds")
+                ch = ord(self._chars[i])
+                if 0xD800 <= ch <= 0xDBFF and i + 1 < n:
+                    low = ord(self._chars[i + 1])
+                    if 0xDC00 <= low <= 0xDFFF:
+                        i += 2
+                        continue
+                i += 1
+        else:
+            for _ in range(-codePointOffset):
+                if i <= 0:
+                    raise IndexError("offsetByCodePoints: offset out of bounds")
+                ch = ord(self._chars[i - 1])
+                if 0xDC00 <= ch <= 0xDFFF and i >= 2:
+                    high = ord(self._chars[i - 2])
+                    if 0xD800 <= high <= 0xDBFF:
+                        i -= 2
+                        continue
+                i -= 1
+        return i
+
+    def toCharArray(self) -> list[str]:
+        """Retorna cópia da lista de char (code units UTF-16)."""
+        return list(self._chars)
+
+    def getChars(
+        self,
+        srcBegin: int,
+        srcEnd: int,
+        dst: list[str],
+        dstBegin: int,
+    ) -> None:
+        """Copia chars [srcBegin, srcEnd) para dst a partir de dstBegin (in-place)."""
+        _validate_range(srcBegin, srcEnd, len(self._chars))
+        count = srcEnd - srcBegin
+        if dstBegin < 0 or dstBegin + count > len(dst):
+            raise IndexError(
+                "ArrayIndexOutOfBoundsException: destination array too small"
+            )
+        for i in range(count):
+            dst[dstBegin + i] = self._chars[srcBegin + i]
+    
+    def getBytes(self, charset: Optional[str] = None) -> bytes:
+        """Encodes a string para bytes usando o charset fornecido (padrão: UTF-8)."""
+        cs = _resolve_charset(charset) if charset else "utf-8"
+        return self._value.encode(cs)
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
@@ -328,3 +386,4 @@ def _java_format(fmt: str, *args: object) -> str:
             raise ValueError(f"UnknownFormatConversionException: '{spec}'")
 
     return "".join(result)
+    
