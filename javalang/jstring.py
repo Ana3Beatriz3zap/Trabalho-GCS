@@ -272,3 +272,14 @@ class JString:
                 e._value if isinstance(e, JString) else str(e) for e in elements
             ]
         return JString(delim.join(parts))
+    
+
+def _java_float_str(value: float) -> str:
+    """Formata float como Java: sem trailing zeros desnecessários mas sempre com decimal."""
+    import math
+    if math.isnan(value):
+        return "NaN"
+    if math.isinf(value):
+        return "Infinity" if value > 0 else "-Infinity"
+    s = repr(value)
+    return s
