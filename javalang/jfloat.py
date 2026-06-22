@@ -424,3 +424,54 @@ class JFloat:
         return f"{sign_str}0x{lead}.{hex_frac}p{exp_val}"
 
     
+        # ------------------------------------------------------------------
+    
+    # ------------------------------------------------------------------
+    # Static — bit-level conversions
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def floatToIntBits(value: float) -> int:
+        """
+        Return the IEEE 754 bit representation as a **signed** 32-bit integer.
+
+        Java: ``static int floatToIntBits(float value)``
+
+        If *value* is any NaN, returns ``0x7fc00000`` (canonical quiet NaN),
+        regardless of the original NaN bit pattern.  This normalisation
+        ensures that all NaN values share the same bit representation and
+        therefore the same hash code.
+        """
+        if math.isnan(value):
+            return 0x7fc0_0000   # canonical quiet NaN (positive signed int)
+        raw = _float32_raw_bits(_to_float32(value))
+        return _to_signed32(raw)
+
+    @staticmethod
+    def floatToRawIntBits(value: float) -> int:
+        """
+        Return the raw IEEE 754 bit representation as a **signed** 32-bit int,
+        preserving NaN bit patterns without canonicalisation.
+
+        Java: ``static int floatToRawIntBits(float value)``
+
+        Limitation: Python's ``float`` exposes a single NaN bit pattern.
+        When any NaN is packed into a 32-bit struct field, the result is
+        implementation-defined (typically ``0x7fc00000``).  Therefore, this
+        method and ``floatToIntBits()`` produce the same result in practice.
+        See the README for details.
+        """
+        raw = _float32_raw_bits(_to_float32(value))
+        return _to_signed32(raw)
+
+    @staticmethod
+    def intBitsToFloat(bits: int) -> float:
+        """
+        Return the float32 whose IEEE 754 bit pattern equals *bits*.
+
+        Java: ``static float intBitsToFloat(int bits)``
+
+        Only the low 32 bits of *bits* are used (consistent with Java's
+        ``int`` being 32-bit).
+        """
+        return _bits_to_float32(bits & 0xFFFF_FFFF)
