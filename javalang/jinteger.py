@@ -57,6 +57,73 @@ def _check_radix_strict(radix: int) -> None:
             f"radix {radix} fora do intervalo [{_MIN_RADIX}, {_MAX_RADIX}]"
         )
 
+def parseUnsignedInt(s: Optional[str], radix: int = 10) -> int:
+        """
+        Parseia a string como inteiro sem sinal no radix dado.
+
+        Valores entre 2^31 e 2^32-1 (maiores que MAX_VALUE) são retornados
+        como inteiros negativos de 32 bits com sinal — comportamento Java.
+
+        Equivalente a:
+            Integer.parseUnsignedInt(String s)
+            Integer.parseUnsignedInt(String s, int radix)
+
+        Exceções
+        --------
+        NumberFormatException
+            String nula, vazia, com sinal negativo, valor > 4294967295,
+            radix fora de [2, 36], ou caracteres inválidos.
+
+        Exemplos
+        --------
+        >>> JInteger.parseUnsignedInt("4294967295")
+        -1
+        >>> JInteger.parseUnsignedInt("ff", 16)
+        255
+        """
+        if s is None or len(s) == 0:
+            raise NumberFormatException("Argumento nulo ou string vazia")
+        _check_radix_strict(radix)
+
+        idx = 0
+        if s[0] == '+':
+            idx = 1
+        elif s[0] == '-':
+            raise NumberFormatException(
+                f'parseUnsignedInt não aceita sinal negativo: "{s}"'
+            )
+
+        if idx >= len(s):
+            raise NumberFormatException(f'Para string: "{s}"')
+
+        try:
+            value = int(s[idx:], radix)
+        except ValueError:
+            raise NumberFormatException(f'Para string: "{s}"')
+
+        if value < 0 or value > 0xFFFF_FFFF:
+            raise NumberFormatException(
+                f'Valor fora do intervalo unsigned [0, 4294967295]: "{s}"'
+            )
+
+        return _to_int32(value)
+
+def toBinaryString(i: int) -> str:
+        """
+        Retorna representação binária do inteiro como unsigned de 32 bits.
+
+        Equivalente a Integer.toBinaryString(int i).
+
+        Exemplos
+        --------
+        >>> JInteger.toBinaryString(-1)
+        '11111111111111111111111111111111'
+        >>> JInteger.toBinaryString(4)
+        '100'
+        """
+        return _uint_to_str(i, 2)
+    
+    
 
 def _parse_signed_core(s: Optional[str], radix: int) -> int:
     """
@@ -498,6 +565,41 @@ class JInteger:
         return _to_int32(value)
 
     hashCode = _DualMethod(_hashCode_instance, _hashCode_static)
+
+    def __gt__(self, other: 'JInteger') -> bool:
+        return self.compareTo(other) > 0
+
+    def __ge__(self, other: 'JInteger') -> bool:
+        return self.compareTo(other) >= 0
+
+    def __int__(self) -> int:
+        return self._value
+    
+    def __float__(self) -> float:
+        return self.doubleValue()
+    # ------------------------------------------------------------------
+    # Dunder helpers Python — facilitam uso idiomático sem alterar a API Java
+    # ------------------------------------------------------------------
+
+    def __repr__(self) -> str:
+        return f"JInteger({self._value})"
+
+    def __str__(self) -> str:
+        # Chama o método de instância através do descritor
+        return self.toString()
+
+    def __eq__(self, other: object) -> bool:
+        return self.equals(other)
+    
+    def __hash__(self) -> int:
+        # Chama o método de instância através do descritor
+        return self.hashCode()
+
+    def __lt__(self, other: 'JInteger') -> bool:
+        return self.compareTo(other) < 0
+
+    def __le__(self, other: 'JInteger') -> bool:
+        return self.compareTo(other) <= 0
     
     @staticmethod
     def reverseBytes(i: int) -> int:
