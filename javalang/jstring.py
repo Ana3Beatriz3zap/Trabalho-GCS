@@ -21,6 +21,7 @@ Decisões de Projeto:
  
 from __future__ import annotations
  
+import re
 from typing import Optional, Union
 
 # ---------------------------------------------------------------------------
@@ -191,4 +192,31 @@ class JString:
             value, (bytes, bytearray)
         ):
             self._chars = self._chars[offset: offset + count]
- 
+
+    # ---------------------------------------------------------------------------
+    # Funções auxiliares internas
+    # ---------------------------------------------------------------------------
+
+
+    def _java_int(value: int) -> int:
+        """Trunca para inteiro Java de 32 bits (complemento de dois)."""
+        value &= 0xFFFFFFFF
+        if value >= 0x80000000:
+            value -= 0x100000000
+        return value
+
+
+    def _java_float_str(value: float) -> str:
+        """Formata float como Java: sem trailing zeros desnecessários mas sempre com decimal."""
+        import math
+        if math.isnan(value):
+            return "NaN"
+        if math.isinf(value):
+            return "Infinity" if value > 0 else "-Infinity"
+        s = repr(value)
+        return s
+
+
+    def _java_replacement(repl: str) -> str:
+        """Converte referências de grupo Java ($1, $2) para Python (\\1, \\2)."""
+        return re.sub(r"\$(\d+)", r"\\\1", repl)
