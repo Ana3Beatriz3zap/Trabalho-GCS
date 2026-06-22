@@ -298,3 +298,30 @@ class JFloat:
                 f"Cannot parse '{s}' as float "
                 f"(Java equivalent: NumberFormatException)"
             )
+
+    # ------------------------------------------------------------------
+    # Dual-use methods  (instance call: obj.m()  OR  static call: JFloat.m(v))
+    # ------------------------------------------------------------------
+
+    def toString(self_or_f: Union['JFloat', float] = _UNSET) -> str:  # type: ignore[override]
+        """
+        Return a Java-style string for this value or for the given float.
+
+        Instance: ``obj.toString()``         → string for *obj*'s value
+        Static:   ``JFloat.toString(f)``     → string for the float32 *f*
+
+        Java: ``String toString()`` / ``static String toString(float f)``
+
+        Examples::
+
+            JFloat(1.0).toString()   → "1.0"
+            JFloat.toString(0.1)     → "0.1"
+            JFloat.toString(1e8)     → "1.0E8"
+        """
+        if self_or_f is _UNSET:
+            raise TypeError(
+                "toString() requires a JFloat instance or a float argument"
+            )
+        if isinstance(self_or_f, JFloat):
+            return _java_float_str(self_or_f._value)
+        return _java_float_str(_to_float32(float(self_or_f)))
