@@ -32,5 +32,5 @@ jobs:
       - name: Rodar Verificação de Tipos (Mypy)
         run: mypy . --ignore-missing-imports
 
-      #- name: Rodar testes automatizados e Cobertura
-      #  run: pytest -v --cov=. --cov-report=term-missing
+      - name: Rodar testes automatizados e Cobertura
+        run: python -m pytest -v --cov=javalang --cov-report=term-missing

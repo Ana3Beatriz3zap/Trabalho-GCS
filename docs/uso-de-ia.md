@@ -78,7 +78,7 @@ A IA foi utilizada para gerar uma estrutura inicial padronizada para a descriç�
 
 * [x] Implementação
 * [x] Testes
-* [x] Documentação
+* [ ] Documentação
 * [x] Refatoração
 * [x] Explicação técnica
 
@@ -139,7 +139,6 @@ As respostas produzidas serviram como material de apoio para estudo, validação
 * `tests/test_jinteger.py`
 * `tests/test_jfloat.py`
 * `tests/test_jstring.py`
-* Documentação das classes e relatórios de compatibilidade
 
 ---
 
@@ -148,4 +147,4 @@ As respostas produzidas serviram como material de apoio para estudo, validação
 | ID | Responsável | Classe/Módulo | Métodos | Tipo de Uso |
 |-----|-------------|---------------|----------|-------------|
 | IA-001 | Ana Beatriz | Processo de GCS / Configuração do Repositório | N/A | Documentação |
-| IA-002 | Desenvolvedoras | JInteger, JFloat e JString | Diversos métodos | Implementação, Testes, Documentação, Refatoração e Explicação Técnica |
+| IA-002 | Desenvolvedoras | JInteger, JFloat e JString | Diversos métodos | Implementação, Testes, Refatoração e Explicação Técnica |
