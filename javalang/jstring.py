@@ -309,6 +309,31 @@ class JString:
             if self._chars[i: i + m] == target_chars:
                 return i
         return -1
+    
+    def contains(self, cs: Union[str, "JString"]) -> bool:
+        """Retorna True se this contém a sequência cs."""
+        _validate_not_none(cs, "s")
+        return self.indexOf(cs) >= 0
+
+    def startsWith(self, prefix: "JString", toffset: int = 0) -> bool:
+        """Retorna True se this começa com prefix a partir de toffset."""
+        _validate_not_none(prefix, "prefix")
+        p = prefix._chars if isinstance(prefix, JString) else _to_char_list(prefix)
+        m = len(p)
+        if toffset < 0 or toffset + m > len(self._chars):
+            return False
+        return self._chars[toffset: toffset + m] == p
+
+    def endsWith(self, suffix: "JString") -> bool:
+        """Retorna True se this termina com suffix."""
+        _validate_not_none(suffix, "suffix")
+        p = suffix._chars if isinstance(suffix, JString) else _to_char_list(suffix)
+        m = len(p)
+        if m == 0:
+            return True
+        if m > len(self._chars):
+            return False
+        return self._chars[-m:] == p
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
