@@ -22,6 +22,7 @@ Decisões de Projeto:
 from __future__ import annotations
  
 import re
+import sys
 from typing import Optional, Union, Any, cast
 
 # ---------------------------------------------------------------------------
@@ -409,6 +410,25 @@ class JString:
         if m > len(self._chars):
             return False
         return self._chars[-m:] == p
+    def trim(self) -> "JString":
+        """Remove whitespace ASCII (\\u0001–\\u0020) do início e fim (como Java)."""
+        v = self._value
+        start = 0
+        end = len(v)
+        while start < end and ord(v[start]) <= 0x20:
+            start += 1
+        while end > start and ord(v[end - 1]) <= 0x20:
+            end -= 1
+        return JString(v[start:end])
+
+    def intern(self) -> str:
+        """Retorna versão interned da string Python interna.
+
+        Nota: Java intern() retorna String do pool JVM.
+        Aqui retorna str Python interned via sys.intern().
+        Retorna str (não JString) para compatibilidade com sys.intern().
+        """
+        return sys.intern(self._value)
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares internas
